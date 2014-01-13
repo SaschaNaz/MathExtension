@@ -88,25 +88,28 @@ var Matrix = (function () {
         return new Matrix(this.columnLength, items);
     };
 
-    Matrix.prototype.numericMap = function (func) {
-        var argArray = [];
-        for (var _i = 0; _i < (arguments.length - 1); _i++) {
-            argArray[_i] = arguments[_i + 1];
-        }
-        return this.mapFor.apply(this, [func, null].concat(argArray));
-    };
-
-    Matrix.prototype.mapFor = function (func, condition) {
+    Matrix.prototype.map = function (func, input) {
         var argArray = [];
         for (var _i = 0; _i < (arguments.length - 2); _i++) {
             argArray[_i] = arguments[_i + 2];
         }
+        return this.mapFor.apply(this, [func, null, input].concat(argArray));
+    };
+
+    Matrix.prototype.mapFor = function (func, condition, input) {
+        var argArray = [];
+        for (var _i = 0; _i < (arguments.length - 3); _i++) {
+            argArray[_i] = arguments[_i + 3];
+        }
+        if (input.isMatrix && (this.columnLength !== input.columnLength || this.rowLength !== input.rowLength))
+            throw new Error("Dimensions should match each other");
+
         var newMatrix = this.clone();
         for (var row = 0; row < newMatrix.rowLength; row++) {
             for (var column = 0; column < newMatrix.columnLength; column++) {
                 var item = newMatrix.array[row][column];
                 if (!condition || condition(item))
-                    newMatrix.array[row][column] = func.apply(null, [item].concat(argArray));
+                    newMatrix.array[row][column] = func.apply(null, [item, input.isMatrix ? input.array[row][column] : input].concat(argArray));
             }
         }
         return newMatrix;
@@ -130,13 +133,6 @@ var Matrix = (function () {
             outputArray.push(strArray.join(' '));
         }
         return outputArray.join('\r\n');
-    };
-
-    Matrix.prototype.map = function (func, input) {
-        if (!input.isMatrix)
-            return this.numericMap(func, input);
-        else
-            return this.matrixMap(func, input);
     };
 
     Matrix.prototype.plus = function (input) {
@@ -169,19 +165,6 @@ var Matrix = (function () {
 
     Matrix.divide = function (item, input) {
         return item / input;
-    };
-
-    Matrix.prototype.matrixMap = function (func, input) {
-        if (this.columnLength !== input.columnLength || this.rowLength !== input.rowLength)
-            throw new Error("Dimensions should match each other");
-        var newMatrix = this.clone();
-        for (var row = 0; row < newMatrix.rowLength; row++) {
-            for (var column = 0; column < newMatrix.columnLength; column++) {
-                var item = newMatrix.array[row][column];
-                newMatrix.array[row][column] = func.apply(null, [item, input.array[row][column]]);
-            }
-        }
-        return newMatrix;
     };
     Matrix.zeroBased = false;
     return Matrix;
