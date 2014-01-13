@@ -1,5 +1,9 @@
 class Matrix {
     static zeroBased = false;
+    get isMatrix() {
+        return !!this.columnLength && !!this.rowLength;
+    }
+
     private getInternalIndex(i: number) {
         if (Matrix.zeroBased)
             return i;
@@ -33,18 +37,43 @@ class Matrix {
         }
     }    
 
-    item(index: number);
-    item(row: number, column?: number) {
-        if (column === undefined) {
-            var index = this.getInternalIndex(row);
+    getFor(index: number): number;
+    getFor(row: number, column: number): number;
+    getFor(i1: number, i2?: number) {
+        var row: number;
+        var column: number;
+        if (i2 === undefined) {
+            var index = this.getInternalIndex(i1);
             column = index % this.columnLength;
             row = (index - column) / this.columnLength;
         }
         else {
-            row = this.getInternalIndex(row);
-            column = this.getInternalIndex(column);
+            row = this.getInternalIndex(i1);
+            column = this.getInternalIndex(i2);
         }
         return this.array[row][column];
+    }
+
+    setFor(index: number, input: number): Matrix;
+    setFor(row: number, column: number, input: number): Matrix;
+    setFor(i1: number, i2: number, i3?: number) {
+        var row: number;
+        var column: number;
+        var input: number;
+        if (i3 === undefined) {
+            var index = this.getInternalIndex(i1);
+            column = index % this.columnLength;
+            row = (index - column) / this.columnLength;
+            input = i2;
+        }
+        else {
+            row = this.getInternalIndex(i1);
+            column = this.getInternalIndex(i2);
+            input = i3;
+        }
+
+        this.array[row][column] = input;
+        return this;
     }
 
     private clone() {
@@ -55,11 +84,18 @@ class Matrix {
         return new Matrix(this.columnLength, items);
     }
 
-    map(func: Function, ...argArray: any[]) {
+    numericMap(func: Function, ...argArray: any[]) {
+        return this.mapFor.apply(this, [func, null].concat(argArray));
+    }
+
+    mapFor(func: Function, condition: Function, ...argArray: any[]) {
         var newMatrix = this.clone();
         for (var row = 0; row < newMatrix.rowLength; row++) {
-            for (var column = 0; column < newMatrix.columnLength; column++)
-                newMatrix.array[row][column] = func.apply(null, [newMatrix.array[row][column]].concat(argArray));
+            for (var column = 0; column < newMatrix.columnLength; column++) {
+                var item = newMatrix.array[row][column];
+                if (!condition || condition(item))
+                    newMatrix.array[row][column] = func.apply(null, [item].concat(argArray));
+            }
         }
         return newMatrix;
     }
@@ -84,21 +120,63 @@ class Matrix {
         return outputArray.join('\r\n');
     }
 
-    plus(input: number) {
-        return this.map((i) => { return i + input; });
+    map(func: Function, input: any) {
+        if (!input.isMatrix)
+            return this.numericMap(func, input);
+        else
+            return this.matrixMap(func, input);
     }
 
-    minus(input: number) {
-        return this.map((i) => { return i - input; });
+    plus(input: number);
+    plus(input: Matrix);
+    plus(input: any) {
+        return this.map(Matrix.add, input);
     }
 
-    multiply(input: number) {
-        return this.map((i) => { return i * input; });
+    minus(input: number);
+    minus(input: Matrix);
+    minus(input: any) {
+        return this.map(Matrix.subtract, input);
     }
 
-    divide(input: number) {
-        return this.map((i) => { return i * input; });
+    times(input: number);
+    times(input: Matrix);
+    times(input: any) {
+        return this.map(Matrix.multiply, input);
     }
 
-    
+    dividedBy(input: number);
+    dividedBy(input: Matrix);
+    dividedBy(input: any) {
+        return this.map(Matrix.divide, input);
+    }
+
+    static add(item: number, input: number) {
+        return item + input;
+    }
+
+    static subtract(item: number, input: number) {
+        return item - input;
+    }
+
+    static multiply(item: number, input: number) {
+        return item * input;
+    }
+
+    static divide(item: number, input: number) {
+        return item / input;
+    }
+
+    matrixMap(func: Function, input: Matrix) {
+        if (this.columnLength !== input.columnLength || this.rowLength !== input.rowLength)
+            throw new Error("Dimensions should match each other");
+        var newMatrix = this.clone();
+        for (var row = 0; row < newMatrix.rowLength; row++) {
+            for (var column = 0; column < newMatrix.columnLength; column++) {
+                var item = newMatrix.array[row][column];
+                newMatrix.array[row][column] = func.apply(null, [item, input.array[row][column]]);
+            }
+        }
+        return newMatrix;
+    }
 }
