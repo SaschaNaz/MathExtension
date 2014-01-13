@@ -84,12 +84,12 @@ class Matrix {
         return new Matrix(this.columnLength, items);
     }
 
-    map(func: Function, input: any, ...argArray: any[]) {
+    map(func: Function, input?: any, ...argArray: any[]) {
         return this.mapFor.apply(this, [func, null, input].concat(argArray));
     }
 
-    mapFor(func: Function, condition: Function, input: any, ...argArray: any[]) {
-        if (input.isMatrix &&
+    mapFor(func: Function, condition: Function, input?: any, ...argArray: any[]) {
+        if (input != null && input.isMatrix &&
             (this.columnLength !== input.columnLength || this.rowLength !== input.rowLength))
                 throw new Error("Dimensions should match each other");
 
@@ -97,8 +97,12 @@ class Matrix {
         for (var row = 0; row < newMatrix.rowLength; row++) {
             for (var column = 0; column < newMatrix.columnLength; column++) {
                 var item = newMatrix.array[row][column];
-                if (!condition || condition(item))
-                    newMatrix.array[row][column] = func.apply(null, [item, input.isMatrix ? input.array[row][column] : input].concat(argArray));
+                if (!condition || condition(item)) {
+                    if (input == null)
+                        newMatrix.array[row][column] = func.apply(null, [item]);
+                    else
+                        newMatrix.array[row][column] = func.apply(null, [item, input.isMatrix ? input.array[row][column] : input].concat(argArray));
+                }
             }
         }
         return newMatrix;
