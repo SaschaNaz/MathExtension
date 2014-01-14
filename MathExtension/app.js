@@ -1,6 +1,8 @@
 var Matrix = (function () {
     function Matrix(columnLength, items) {
-        if (!(columnLength >= 1))
+        if (columnLength == null)
+            columnLength = items.length;
+        if (columnLength != null && !(columnLength >= 1))
             throw new Error("Column length should be larger than or equal to 1.");
         if (items.length == 0)
             throw new Error("Items are required to make a matrix.");
@@ -30,6 +32,12 @@ var Matrix = (function () {
             throw new Error("Index should be larger than 0");
         else
             return i - 1;
+    };
+    Matrix.prototype.getExternalIndex = function (i) {
+        if (Matrix.zeroBased)
+            return i;
+        else
+            return i + 1;
     };
 
     Object.defineProperty(Matrix.prototype, "columnLength", {
@@ -108,7 +116,7 @@ var Matrix = (function () {
         for (var row = 0; row < newMatrix.rowLength; row++) {
             for (var column = 0; column < newMatrix.columnLength; column++) {
                 var item = newMatrix.array[row][column];
-                if (!condition || condition(item)) {
+                if (!condition || condition(item, this.getExternalIndex(row), this.getExternalIndex(column))) {
                     if (input == null)
                         newMatrix.array[row][column] = func.apply(null, [item]);
                     else
@@ -155,6 +163,10 @@ var Matrix = (function () {
         return this.map(Matrix.divide, input);
     };
 
+    Matrix.prototype.replace = function (input) {
+        return this.map(Matrix.substitute, input);
+    };
+
     Matrix.add = function (item, input) {
         return item + input;
     };
@@ -169,6 +181,27 @@ var Matrix = (function () {
 
     Matrix.divide = function (item, input) {
         return item / input;
+    };
+
+    Matrix.substitute = function (item, input) {
+        return input;
+    };
+
+    Matrix.prototype.matrixMultiply = function (input) {
+        if (this.columnLength != input.rowLength)
+            throw new Error("Row length of the input matrix should be same with column length of the original one.");
+        var newColumnLength = input.columnLength;
+        var newItems = [];
+        this.array.forEach(function (rowArray) {
+            for (var column = 0; column < input.columnLength; column++) {
+                var newItem = 0;
+                for (var row = 0; row < input.rowLength; row++)
+                    newItem += rowArray[row] * input.array[row][column];
+                newItems.push(newItem);
+            }
+        });
+
+        return new Matrix(newColumnLength, newItems);
     };
     Matrix.zeroBased = false;
     return Matrix;

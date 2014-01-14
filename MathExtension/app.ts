@@ -12,6 +12,12 @@ class Matrix {
         else
             return i - 1;
     }
+    private getExternalIndex(i: number) {
+        if (Matrix.zeroBased)
+            return i;
+        else
+            return i + 1;
+    }
 
     private array: number[][];
     get columnLength() {
@@ -22,13 +28,16 @@ class Matrix {
     }
 
     constructor(columnLength: number, items: number[]) {
-        if (!(columnLength >= 1))//
+        if (columnLength == null)
+            columnLength = items.length;
+        if (columnLength != null && !(columnLength >= 1))
             throw new Error("Column length should be larger than or equal to 1.");
         if (items.length == 0)//
             throw new Error("Items are required to make a matrix.");
         if (items.length % columnLength != 0)
             throw new Error("Invalid number of items");
         //columnLength > 1, items exist, items.length % columnLength == 0
+            
         this.array = [];
         for (var row = 0; row < items.length / columnLength; row++) {
             this.array.push([]);
@@ -97,7 +106,7 @@ class Matrix {
         for (var row = 0; row < newMatrix.rowLength; row++) {
             for (var column = 0; column < newMatrix.columnLength; column++) {
                 var item = newMatrix.array[row][column];
-                if (!condition || condition(item)) {
+                if (!condition || condition(item, this.getExternalIndex(row), this.getExternalIndex(column))) {
                     if (input == null)
                         newMatrix.array[row][column] = func.apply(null, [item]);
                     else
@@ -152,6 +161,12 @@ class Matrix {
         return this.map(Matrix.divide, input);
     }
 
+    replace(input: number);
+    replace(input: Matrix);
+    replace(input: any) {
+        return this.map(Matrix.substitute, input);
+    }
+
     static add(item: number, input: number) {
         return item + input;
     }
@@ -166,5 +181,26 @@ class Matrix {
 
     static divide(item: number, input: number) {
         return item / input;
+    }
+
+    static substitute(item: number, input: number) {
+        return input;
+    }
+
+    matrixMultiply(input: Matrix) {
+        if (this.columnLength != input.rowLength)
+            throw new Error("Row length of the input matrix should be same with column length of the original one.");
+        var newColumnLength = input.columnLength;
+        var newItems = [];
+        this.array.forEach((rowArray) => {
+            for (var column = 0; column < input.columnLength; column++) {
+                var newItem = 0;
+                for (var row = 0; row < input.rowLength; row++)
+                    newItem += rowArray[row] * input.array[row][column];
+                newItems.push(newItem);
+            }
+        });
+
+        return new Matrix(newColumnLength, newItems);
     }
 }
