@@ -4,7 +4,25 @@ class Matrix {
         return true;
     }
 
-    private getInternalIndex(i: number) {
+    private static assertParameter(...parameters: any[]) {
+        parameters.forEach((p) => {
+            Matrix.assert(p != null, "Argument not optional");
+        });
+    }
+
+    private static assertNumber(...numbers: number[]) {
+        numbers.forEach((n) => {
+            Matrix.assert(n !== undefined, "Argument not optional");
+            Matrix.assert(!isNaN(n), "Invalid argument.");
+        });
+    }
+
+    private static assert(condition: boolean, message: string) {
+        if (!condition)
+            throw new Error(message);
+    }
+
+    private static getInternalIndex(i: number) {
         if (Matrix.zeroBased)
             return i;
         else if (i <= 0)
@@ -12,7 +30,7 @@ class Matrix {
         else
             return i - 1;
     }
-    private getExternalIndex(i: number) {
+    private static getExternalIndex(i: number) {
         if (Matrix.zeroBased)
             return i;
         else
@@ -63,7 +81,7 @@ class Matrix {
         var row: number;
         var column: number;
         if (i2 === undefined) {
-            var index = this.getInternalIndex(i1);
+            var index = Matrix.getInternalIndex(i1);
             if (this.columnLength > 0) {
                 column = index % this.columnLength;
                 row = (index - column) / this.columnLength;
@@ -74,8 +92,8 @@ class Matrix {
             }
         }
         else {
-            row = this.getInternalIndex(i1);
-            column = this.getInternalIndex(i2);
+            row = Matrix.getInternalIndex(i1);
+            column = Matrix.getInternalIndex(i2);
         }
         return this.array[row][column];
     }
@@ -87,7 +105,7 @@ class Matrix {
         var column: number;
         var input: number;
         if (i3 === undefined) {
-            var index = this.getInternalIndex(i1);
+            var index = Matrix.getInternalIndex(i1);
             if (this.columnLength > 0) {
                 column = index % this.columnLength;
                 row = (index - column) / this.columnLength;
@@ -99,8 +117,8 @@ class Matrix {
             input = i2;
         }
         else {
-            row = this.getInternalIndex(i1);
-            column = this.getInternalIndex(i2);
+            row = Matrix.getInternalIndex(i1);
+            column = Matrix.getInternalIndex(i2);
             input = i3;
         }
 
@@ -159,7 +177,7 @@ class Matrix {
         for (var row = 0; row < newMatrix.rowLength; row++) {
             for (var column = 0; column < newMatrix.columnLength; column++) {
                 var item = newMatrix.array[row][column];
-                if (!condition || condition(item, this.getExternalIndex(row), this.getExternalIndex(column))) {
+                if (!condition || condition(item, Matrix.getExternalIndex(row), Matrix.getExternalIndex(column))) {
                     if (input == null)
                         newMatrix.array[row][column] = func.apply(null, [item]);
                     else
@@ -202,6 +220,59 @@ class Matrix {
             outputArray.push(strArray.join(' '));
         }
         return '[' + outputArray.join('; ') + ']';
+    }
+
+    static getZeroMatrix(columnLength: number): Matrix;
+    static getZeroMatrix(rowLength: number, columnLength: number): Matrix;
+    static getZeroMatrix(rowLength: number, columnLength?: number) {
+        Matrix.assertNumber(rowLength);
+        var newMatrix = new Matrix();
+        if (!isNaN(columnLength)) {
+            newMatrix.expandRow(rowLength);
+            newMatrix.expandColumn(columnLength);
+        }
+        else {
+            columnLength = rowLength;
+            newMatrix.expandRow(1);
+            newMatrix.expandColumn(columnLength);
+        }
+        return newMatrix;
+    }
+
+    static getIdentityMatrix(size: number) {
+        Matrix.assertNumber(size);
+        var newMatrix = new Matrix();
+        newMatrix.expandRow(size);
+        newMatrix.expandColumn(size);
+        for (var i = 0; i < size; i++)
+            newMatrix.array[i][i] = 1;
+        return newMatrix;
+    }
+
+    static getLinearSpace(start: number, end: number, pointNumber: number) {
+        Matrix.assertNumber(start, end, pointNumber);
+        Matrix.assert(end > start, "End should be larger than start.");
+        var newMatrix = new Matrix();
+        newMatrix.expandRow(1);
+        newMatrix.expandColumn(pointNumber);
+        var gap = (end - start) / (pointNumber - 1);
+        for (var i = 0; i < pointNumber; i++)
+            newMatrix.array[0][i] = start + gap * i;
+        return newMatrix;
+    }
+
+    static getGapSpace(start: number, end: number, gap?: number) {
+        Matrix.assertNumber(start, end);
+        Matrix.assert(end > start, "End should be larger than start.");
+        if (isNaN(gap))
+            gap = 1;
+        var newMatrix = new Matrix();
+        var length = Math.floor((end - start) / gap) + 1;
+        newMatrix.expandRow(1);
+        newMatrix.expandColumn(length);
+        for (var i = 0; i < length; i++)
+            newMatrix.array[0][i] = start + gap * i;
+        return newMatrix;
     }
 
     plus(input: number): Matrix;

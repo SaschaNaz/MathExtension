@@ -30,7 +30,33 @@ var Matrix = (function () {
         configurable: true
     });
 
-    Matrix.prototype.getInternalIndex = function (i) {
+    Matrix.assertParameter = function () {
+        var parameters = [];
+        for (var _i = 0; _i < (arguments.length - 0); _i++) {
+            parameters[_i] = arguments[_i + 0];
+        }
+        parameters.forEach(function (p) {
+            Matrix.assert(p != null, "Argument not optional");
+        });
+    };
+
+    Matrix.assertNumber = function () {
+        var numbers = [];
+        for (var _i = 0; _i < (arguments.length - 0); _i++) {
+            numbers[_i] = arguments[_i + 0];
+        }
+        numbers.forEach(function (n) {
+            Matrix.assert(n !== undefined, "Argument not optional");
+            Matrix.assert(!isNaN(n), "Invalid argument.");
+        });
+    };
+
+    Matrix.assert = function (condition, message) {
+        if (!condition)
+            throw new Error(message);
+    };
+
+    Matrix.getInternalIndex = function (i) {
         if (Matrix.zeroBased)
             return i;
         else if (i <= 0)
@@ -38,7 +64,7 @@ var Matrix = (function () {
         else
             return i - 1;
     };
-    Matrix.prototype.getExternalIndex = function (i) {
+    Matrix.getExternalIndex = function (i) {
         if (Matrix.zeroBased)
             return i;
         else
@@ -67,7 +93,7 @@ var Matrix = (function () {
         var row;
         var column;
         if (i2 === undefined) {
-            var index = this.getInternalIndex(i1);
+            var index = Matrix.getInternalIndex(i1);
             if (this.columnLength > 0) {
                 column = index % this.columnLength;
                 row = (index - column) / this.columnLength;
@@ -76,8 +102,8 @@ var Matrix = (function () {
                 row = 0;
             }
         } else {
-            row = this.getInternalIndex(i1);
-            column = this.getInternalIndex(i2);
+            row = Matrix.getInternalIndex(i1);
+            column = Matrix.getInternalIndex(i2);
         }
         return this.array[row][column];
     };
@@ -87,7 +113,7 @@ var Matrix = (function () {
         var column;
         var input;
         if (i3 === undefined) {
-            var index = this.getInternalIndex(i1);
+            var index = Matrix.getInternalIndex(i1);
             if (this.columnLength > 0) {
                 column = index % this.columnLength;
                 row = (index - column) / this.columnLength;
@@ -97,8 +123,8 @@ var Matrix = (function () {
             }
             input = i2;
         } else {
-            row = this.getInternalIndex(i1);
-            column = this.getInternalIndex(i2);
+            row = Matrix.getInternalIndex(i1);
+            column = Matrix.getInternalIndex(i2);
             input = i3;
         }
 
@@ -162,7 +188,7 @@ var Matrix = (function () {
         for (var row = 0; row < newMatrix.rowLength; row++) {
             for (var column = 0; column < newMatrix.columnLength; column++) {
                 var item = newMatrix.array[row][column];
-                if (!condition || condition(item, this.getExternalIndex(row), this.getExternalIndex(column))) {
+                if (!condition || condition(item, Matrix.getExternalIndex(row), Matrix.getExternalIndex(column))) {
                     if (input == null)
                         newMatrix.array[row][column] = func.apply(null, [item]);
                     else
@@ -205,6 +231,56 @@ var Matrix = (function () {
             outputArray.push(strArray.join(' '));
         }
         return '[' + outputArray.join('; ') + ']';
+    };
+
+    Matrix.getZeroMatrix = function (rowLength, columnLength) {
+        Matrix.assertNumber(rowLength);
+        var newMatrix = new Matrix();
+        if (!isNaN(columnLength)) {
+            newMatrix.expandRow(rowLength);
+            newMatrix.expandColumn(columnLength);
+        } else {
+            columnLength = rowLength;
+            newMatrix.expandRow(1);
+            newMatrix.expandColumn(columnLength);
+        }
+        return newMatrix;
+    };
+
+    Matrix.getIdentityMatrix = function (size) {
+        Matrix.assertNumber(size);
+        var newMatrix = new Matrix();
+        newMatrix.expandRow(size);
+        newMatrix.expandColumn(size);
+        for (var i = 0; i < size; i++)
+            newMatrix.array[i][i] = 1;
+        return newMatrix;
+    };
+
+    Matrix.getLinearSpace = function (start, end, pointNumber) {
+        Matrix.assertNumber(start, end, pointNumber);
+        Matrix.assert(end > start, "End should be larger than start.");
+        var newMatrix = new Matrix();
+        newMatrix.expandRow(1);
+        newMatrix.expandColumn(pointNumber);
+        var gap = (end - start) / (pointNumber - 1);
+        for (var i = 0; i < pointNumber; i++)
+            newMatrix.array[0][i] = start + gap * i;
+        return newMatrix;
+    };
+
+    Matrix.getGapSpace = function (start, end, gap) {
+        Matrix.assertNumber(start, end);
+        Matrix.assert(end > start, "End should be larger than start.");
+        if (isNaN(gap))
+            gap = 1;
+        var newMatrix = new Matrix();
+        var length = Math.floor((end - start) / gap) + 1;
+        newMatrix.expandRow(1);
+        newMatrix.expandColumn(length);
+        for (var i = 0; i < length; i++)
+            newMatrix.array[0][i] = start + gap * i;
+        return newMatrix;
     };
 
     Matrix.prototype.plus = function (input) {
