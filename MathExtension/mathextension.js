@@ -1,25 +1,30 @@
 var Matrix = (function () {
     function Matrix(columnLength, items) {
-        if (columnLength == null)
-            columnLength = items.length;
-        if (columnLength != null && !(columnLength >= 1))
-            throw new Error("Column length should be larger than or equal to 1.");
-        if (items.length == 0)
-            throw new Error("Items are required to make a matrix.");
-        if (items.length % columnLength != 0)
-            throw new Error("Invalid number of items");
-
-        //columnLength > 1, items exist, items.length % columnLength == 0
         this.array = [];
-        for (var row = 0; row < items.length / columnLength; row++) {
-            this.array.push([]);
-            for (var column = 0; column < columnLength; column++)
-                this.array[row][column] = items[row * columnLength + column];
+        if (!isNaN(columnLength))
+            columnLength = Number(columnLength);
+        if (items && !isNaN(items.length))
+            columnLength = Number(items.length);
+
+        if (!isNaN(columnLength)) {
+            //columnLength now is really number
+            if (columnLength < 1)
+                throw new Error("Column length should be larger than or equal to 1.");
+            if (items.length == 0)
+                throw new Error("Items are required to make a matrix.");
+            if (items.length % columnLength != 0)
+                throw new Error("Invalid number of items");
+
+            for (var row = 0; row < items.length / columnLength; row++) {
+                this.array.push([]);
+                for (var column = 0; column < columnLength; column++)
+                    this.array[row][column] = items[row * columnLength + column];
+            }
         }
     }
     Object.defineProperty(Matrix.prototype, "isMatrix", {
         get: function () {
-            return !!this.columnLength && !!this.rowLength;
+            return true;
         },
         enumerable: true,
         configurable: true
@@ -42,7 +47,10 @@ var Matrix = (function () {
 
     Object.defineProperty(Matrix.prototype, "columnLength", {
         get: function () {
-            return this.array[0].length;
+            if (this.rowLength > 0)
+                return this.array[0].length;
+            else
+                return 0;
         },
         enumerable: true,
         configurable: true
@@ -60,8 +68,13 @@ var Matrix = (function () {
         var column;
         if (i2 === undefined) {
             var index = this.getInternalIndex(i1);
-            column = index % this.columnLength;
-            row = (index - column) / this.columnLength;
+            if (this.columnLength > 0) {
+                column = index % this.columnLength;
+                row = (index - column) / this.columnLength;
+            } else {
+                column = index;
+                row = 0;
+            }
         } else {
             row = this.getInternalIndex(i1);
             column = this.getInternalIndex(i2);
@@ -75,8 +88,13 @@ var Matrix = (function () {
         var input;
         if (i3 === undefined) {
             var index = this.getInternalIndex(i1);
-            column = index % this.columnLength;
-            row = (index - column) / this.columnLength;
+            if (this.columnLength > 0) {
+                column = index % this.columnLength;
+                row = (index - column) / this.columnLength;
+            } else {
+                column = index;
+                row = 0;
+            }
             input = i2;
         } else {
             row = this.getInternalIndex(i1);
@@ -84,8 +102,36 @@ var Matrix = (function () {
             input = i3;
         }
 
+        if (row > this.rowLength - 1)
+            this.expandRow(row + 1);
+        if (column > this.columnLength - 1)
+            this.expandColumn(column + 1);
         this.array[row][column] = input;
         return this;
+    };
+
+    Matrix.prototype.expandRow = function (rowLength) {
+        if (this.rowLength < rowLength) {
+            while (this.array.length < rowLength) {
+                var rowArray = [];
+                while (rowArray.length < this.columnLength) {
+                    rowArray.push(0);
+                }
+                this.array.push(rowArray);
+            }
+        } else
+            throw new Error("columnLength is already large enough to expand.");
+    };
+
+    Matrix.prototype.expandColumn = function (columnLength) {
+        if (this.columnLength < columnLength) {
+            this.array.forEach(function (rowArray) {
+                while (rowArray.length < columnLength) {
+                    rowArray.push(0);
+                }
+            });
+        } else
+            throw new Error("columnLength is already large enough to expand.");
     };
 
     Matrix.prototype.clone = function () {
@@ -144,7 +190,21 @@ var Matrix = (function () {
             strArray.push(']');
             outputArray.push(strArray.join(' '));
         }
-        return outputArray.join('\r\n');
+        if (outputArray.length > 0)
+            return outputArray.join('\r\n');
+        else
+            return "(Empty matrix)";
+    };
+
+    Matrix.prototype.toMatlabString = function () {
+        var outputArray = [];
+        for (var row = 0; row < this.rowLength; row++) {
+            var strArray = [];
+            for (var column = 0; column < this.columnLength; column++)
+                strArray.push(this.array[row][column]);
+            outputArray.push(strArray.join(' '));
+        }
+        return '[' + outputArray.join('; ') + ']';
     };
 
     Matrix.prototype.plus = function (input) {
@@ -206,4 +266,4 @@ var Matrix = (function () {
     Matrix.zeroBased = false;
     return Matrix;
 })();
-//# sourceMappingURL=app.js.map
+//# sourceMappingURL=mathextension.js.map

@@ -64,8 +64,14 @@ class Matrix {
         var column: number;
         if (i2 === undefined) {
             var index = this.getInternalIndex(i1);
-            column = index % this.columnLength;
-            row = (index - column) / this.columnLength;
+            if (this.columnLength > 0) {
+                column = index % this.columnLength;
+                row = (index - column) / this.columnLength;
+            }
+            else {
+                column = index;
+                row = 0;
+            }
         }
         else {
             row = this.getInternalIndex(i1);
@@ -82,8 +88,14 @@ class Matrix {
         var input: number;
         if (i3 === undefined) {
             var index = this.getInternalIndex(i1);
-            column = index % this.columnLength;
-            row = (index - column) / this.columnLength;
+            if (this.columnLength > 0) {
+                column = index % this.columnLength;
+                row = (index - column) / this.columnLength;
+            }
+            else {
+                column = index;
+                row = 0;
+            }
             input = i2;
         }
         else {
@@ -92,8 +104,38 @@ class Matrix {
             input = i3;
         }
 
+        if (row > this.rowLength - 1)
+            this.expandRow(row + 1);
+        if (column > this.columnLength - 1)
+            this.expandColumn(column + 1);
         this.array[row][column] = input;
         return this;
+    }
+
+    private expandRow(rowLength: number) {
+        if (this.rowLength < rowLength) {
+            while (this.array.length < rowLength) {
+                var rowArray: number[] = [];
+                while (rowArray.length < this.columnLength) {
+                    rowArray.push(0);
+                }
+                this.array.push(rowArray);
+            }
+        }
+        else
+            throw new Error("columnLength is already large enough to expand.");
+    }
+
+    private expandColumn(columnLength: number) {
+        if (this.columnLength < columnLength) {
+            this.array.forEach((rowArray) => {
+                while (rowArray.length < columnLength) {
+                    rowArray.push(0);
+                }
+            });
+        }
+        else
+            throw new Error("columnLength is already large enough to expand.");
     }
 
     private clone() {
@@ -145,7 +187,10 @@ class Matrix {
             strArray.push(']');
             outputArray.push(strArray.join(' '));
         }
-        return outputArray.join('\r\n');
+        if (outputArray.length > 0)
+            return outputArray.join('\r\n');
+        else
+            return "(Empty matrix)";
     }
 
     toMatlabString() {
