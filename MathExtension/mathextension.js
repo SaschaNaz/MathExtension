@@ -8,12 +8,9 @@ var Matrix = (function () {
 
         if (!isNaN(columnLength)) {
             //columnLength now is really number
-            if (columnLength < 1)
-                throw new Error("Column length should be larger than or equal to 1.");
-            if (items.length == 0)
-                throw new Error("Items are required to make a matrix.");
-            if (items.length % columnLength != 0)
-                throw new Error("Invalid number of items");
+            Matrix.assert(columnLength >= 1, "Column length should be larger than or equal to 1.");
+            Matrix.assert(items.length > 0, "Items are required to make a matrix.");
+            Matrix.assert(items.length % columnLength == 0, "Invalid number of items");
 
             for (var row = 0; row < items.length / columnLength; row++) {
                 this.array.push([]);
@@ -137,27 +134,23 @@ var Matrix = (function () {
     };
 
     Matrix.prototype.expandRow = function (rowLength) {
-        if (this.rowLength < rowLength) {
-            while (this.array.length < rowLength) {
-                var rowArray = [];
-                while (rowArray.length < this.columnLength) {
-                    rowArray.push(0);
-                }
-                this.array.push(rowArray);
+        Matrix.assert(this.rowLength < rowLength, "columnLength is already large enough to expand.");
+        while (this.array.length < rowLength) {
+            var rowArray = [];
+            while (rowArray.length < this.columnLength) {
+                rowArray.push(0);
             }
-        } else
-            throw new Error("columnLength is already large enough to expand.");
+            this.array.push(rowArray);
+        }
     };
 
     Matrix.prototype.expandColumn = function (columnLength) {
-        if (this.columnLength < columnLength) {
-            this.array.forEach(function (rowArray) {
-                while (rowArray.length < columnLength) {
-                    rowArray.push(0);
-                }
-            });
-        } else
-            throw new Error("columnLength is already large enough to expand.");
+        Matrix.assert(this.columnLength < columnLength, "columnLength is already large enough to expand.");
+        this.array.forEach(function (rowArray) {
+            while (rowArray.length < columnLength) {
+                rowArray.push(0);
+            }
+        });
     };
 
     Matrix.prototype.clone = function () {
@@ -181,8 +174,8 @@ var Matrix = (function () {
         for (var _i = 0; _i < (arguments.length - 3); _i++) {
             argArray[_i] = arguments[_i + 3];
         }
-        if (input != null && input.isMatrix && (this.columnLength !== input.columnLength || this.rowLength !== input.rowLength))
-            throw new Error("Dimensions should match each other");
+        if (input != null && input.isMatrix)
+            Matrix.assert(this.columnLength == input.columnLength && this.rowLength == input.rowLength, "Dimensions should match each other");
 
         var newMatrix = this.clone();
         for (var row = 0; row < newMatrix.rowLength; row++) {
@@ -324,8 +317,7 @@ var Matrix = (function () {
     };
 
     Matrix.prototype.matrixMultiply = function (input) {
-        if (this.columnLength != input.rowLength)
-            throw new Error("Row length of the input matrix should be same with column length of the original one.");
+        Matrix.assert(this.columnLength == input.rowLength, "Row length of the input matrix should be same with column length of the original one.");
         var newColumnLength = input.columnLength;
         var newItems = [];
         this.array.forEach(function (rowArray) {

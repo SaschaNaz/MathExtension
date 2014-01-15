@@ -59,14 +59,11 @@ class Matrix {
         if (!isNaN(columnLength))
         {
             //columnLength now is really number
-            if (columnLength < 1)
-                throw new Error("Column length should be larger than or equal to 1.");
-            if (items.length == 0)//
-                throw new Error("Items are required to make a matrix.");
-            if (items.length % columnLength != 0)
-                throw new Error("Invalid number of items");
+            Matrix.assert(columnLength >= 1, "Column length should be larger than or equal to 1.");
+            Matrix.assert(items.length > 0, "Items are required to make a matrix.");
+            Matrix.assert(items.length % columnLength == 0, "Invalid number of items");
 
-            //columnLength > 1, items exist, items.length % columnLength == 0
+            //columnLength >= 1, items exist, items.length % columnLength == 0
             for (var row = 0; row < items.length / columnLength; row++) {
                 this.array.push([]);
                 for (var column = 0; column < columnLength; column++)
@@ -131,29 +128,23 @@ class Matrix {
     }
 
     private expandRow(rowLength: number) {
-        if (this.rowLength < rowLength) {
-            while (this.array.length < rowLength) {
-                var rowArray: number[] = [];
-                while (rowArray.length < this.columnLength) {
-                    rowArray.push(0);
-                }
-                this.array.push(rowArray);
+        Matrix.assert(this.rowLength < rowLength, "columnLength is already large enough to expand.");
+        while (this.array.length < rowLength) {
+            var rowArray: number[] = [];
+            while (rowArray.length < this.columnLength) {
+                rowArray.push(0);
             }
+            this.array.push(rowArray);
         }
-        else
-            throw new Error("columnLength is already large enough to expand.");
     }
 
     private expandColumn(columnLength: number) {
-        if (this.columnLength < columnLength) {
-            this.array.forEach((rowArray) => {
-                while (rowArray.length < columnLength) {
-                    rowArray.push(0);
-                }
-            });
-        }
-        else
-            throw new Error("columnLength is already large enough to expand.");
+        Matrix.assert(this.columnLength < columnLength, "columnLength is already large enough to expand.");
+        this.array.forEach((rowArray) => {
+            while (rowArray.length < columnLength) {
+                rowArray.push(0);
+            }
+        });
     }
 
     private clone() {
@@ -169,9 +160,10 @@ class Matrix {
     }
 
     mapFor(func: Function, condition: Function, input?: any, ...argArray: any[]) {
-        if (input != null && input.isMatrix &&
-            (this.columnLength !== input.columnLength || this.rowLength !== input.rowLength))
-                throw new Error("Dimensions should match each other");
+        if (input != null && input.isMatrix)
+            Matrix.assert(
+                this.columnLength == input.columnLength && this.rowLength == input.rowLength,
+                "Dimensions should match each other");
 
         var newMatrix = this.clone();
         for (var row = 0; row < newMatrix.rowLength; row++) {
@@ -326,8 +318,8 @@ class Matrix {
     }
 
     matrixMultiply(input: Matrix) {
-        if (this.columnLength != input.rowLength)
-            throw new Error("Row length of the input matrix should be same with column length of the original one.");
+        Matrix.assert(this.columnLength == input.rowLength,
+            "Row length of the input matrix should be same with column length of the original one.");
         var newColumnLength = input.columnLength;
         var newItems: number[] = [];
         this.array.forEach((rowArray) => {
