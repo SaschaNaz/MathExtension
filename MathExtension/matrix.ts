@@ -1,7 +1,7 @@
 class Matrix {
     static zeroBased = false;
     get isMatrix() {
-        return !!this.columnLength && !!this.rowLength;
+        return true;
     }
 
     private getInternalIndex(i: number) {
@@ -19,30 +19,41 @@ class Matrix {
             return i + 1;
     }
 
-    private array: number[][];
+    private array: number[][] = [];
     get columnLength() {
-        return this.array[0].length;
+        if (this.rowLength > 0)
+            return this.array[0].length;
+        else
+            return 0;
     }
     get rowLength() {
         return this.array.length;
     }
 
-    constructor(columnLength: number, items: number[]) {
-        if (columnLength == null)
-            columnLength = items.length;
-        if (columnLength != null && !(columnLength >= 1))
-            throw new Error("Column length should be larger than or equal to 1.");
-        if (items.length == 0)//
-            throw new Error("Items are required to make a matrix.");
-        if (items.length % columnLength != 0)
-            throw new Error("Invalid number of items");
-        //columnLength > 1, items exist, items.length % columnLength == 0
-            
-        this.array = [];
-        for (var row = 0; row < items.length / columnLength; row++) {
-            this.array.push([]);
-            for (var column = 0; column < columnLength; column++)
-                this.array[row][column] = items[row * columnLength + column];
+    constructor();
+    constructor(columnLength: number, items: number[])
+    constructor(columnLength?: number, items?: number[]) {
+        if (!isNaN(columnLength)) 
+            columnLength = Number(columnLength);
+        if (items && !isNaN(items.length))
+            columnLength = Number(items.length);
+
+        if (!isNaN(columnLength))
+        {
+            //columnLength now is really number
+            if (columnLength < 1)
+                throw new Error("Column length should be larger than or equal to 1.");
+            if (items.length == 0)//
+                throw new Error("Items are required to make a matrix.");
+            if (items.length % columnLength != 0)
+                throw new Error("Invalid number of items");
+
+            //columnLength > 1, items exist, items.length % columnLength == 0
+            for (var row = 0; row < items.length / columnLength; row++) {
+                this.array.push([]);
+                for (var column = 0; column < columnLength; column++)
+                    this.array[row][column] = items[row * columnLength + column];
+            }
         }
     }    
 
@@ -94,7 +105,7 @@ class Matrix {
     }
 
     map(func: Function, input?: any, ...argArray: any[]) {
-        return this.mapFor.apply(this, [func, null, input].concat(argArray));
+        return <Matrix>this.mapFor.apply(this, [func, null, input].concat(argArray));
     }
 
     mapFor(func: Function, condition: Function, input?: any, ...argArray: any[]) {
@@ -117,7 +128,7 @@ class Matrix {
         return newMatrix;
     }
 
-    forEach(func: Function) {
+    forEach(func: (item: number) => void) {
         this.array.forEach((row: number[]) => {
             row.forEach((item: number) => {
                 func(item);
@@ -137,32 +148,43 @@ class Matrix {
         return outputArray.join('\r\n');
     }
 
-    plus(input: number);
-    plus(input: Matrix);
+    toMatlabString() {
+        var outputArray: string[] = [];
+        for (var row = 0; row < this.rowLength; row++) {
+            var strArray: any[] = [];
+            for (var column = 0; column < this.columnLength; column++)
+                strArray.push(this.array[row][column]);
+            outputArray.push(strArray.join(' '));
+        }
+        return '[' + outputArray.join('; ') + ']';
+    }
+
+    plus(input: number): Matrix;
+    plus(input: Matrix): Matrix;
     plus(input: any) {
         return this.map(Matrix.add, input);
     }
 
-    minus(input: number);
-    minus(input: Matrix);
+    minus(input: number): Matrix;
+    minus(input: Matrix): Matrix;
     minus(input: any) {
         return this.map(Matrix.subtract, input);
     }
 
-    times(input: number);
-    times(input: Matrix);
+    times(input: number): Matrix;
+    times(input: Matrix): Matrix;
     times(input: any) {
         return this.map(Matrix.multiply, input);
     }
 
-    dividedBy(input: number);
-    dividedBy(input: Matrix);
+    dividedBy(input: number): Matrix;
+    dividedBy(input: Matrix): Matrix;
     dividedBy(input: any) {
         return this.map(Matrix.divide, input);
     }
 
-    replace(input: number);
-    replace(input: Matrix);
+    replace(input: number): Matrix;
+    replace(input: Matrix): Matrix;
     replace(input: any) {
         return this.map(Matrix.substitute, input);
     }
@@ -191,7 +213,7 @@ class Matrix {
         if (this.columnLength != input.rowLength)
             throw new Error("Row length of the input matrix should be same with column length of the original one.");
         var newColumnLength = input.columnLength;
-        var newItems = [];
+        var newItems: number[] = [];
         this.array.forEach((rowArray) => {
             for (var column = 0; column < input.columnLength; column++) {
                 var newItem = 0;
