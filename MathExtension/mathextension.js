@@ -54,7 +54,7 @@ var Matrix = (function () {
     };
 
     Matrix.getInternalIndex = function (i) {
-        if (Matrix.zeroBased)
+        if (Matrix.isZeroBased)
             return i;
         else if (i <= 0)
             throw new Error("Index should be larger than 0");
@@ -62,7 +62,7 @@ var Matrix = (function () {
             return i - 1;
     };
     Matrix.getExternalIndex = function (i) {
-        if (Matrix.zeroBased)
+        if (Matrix.isZeroBased)
             return i;
         else
             return i + 1;
@@ -193,9 +193,9 @@ var Matrix = (function () {
     };
 
     Matrix.prototype.forEach = function (func) {
-        this.array.forEach(function (row) {
-            row.forEach(function (item) {
-                func(item);
+        this.array.forEach(function (rowArray, row) {
+            rowArray.forEach(function (item, column) {
+                func(item, Matrix.getExternalIndex(row), Matrix.getExternalIndex(column));
             });
         });
     };
@@ -234,7 +234,7 @@ var Matrix = (function () {
             newMatrix.expandColumn(columnLength);
         } else {
             columnLength = rowLength;
-            newMatrix.expandRow(1);
+            newMatrix.expandRow(rowLength);
             newMatrix.expandColumn(columnLength);
         }
         return newMatrix;
@@ -277,43 +277,23 @@ var Matrix = (function () {
     };
 
     Matrix.prototype.plus = function (input) {
-        return this.map(Matrix.add, input);
+        return this.map(Math.add, input);
     };
 
     Matrix.prototype.minus = function (input) {
-        return this.map(Matrix.subtract, input);
+        return this.map(Math.subtract, input);
     };
 
     Matrix.prototype.times = function (input) {
-        return this.map(Matrix.multiply, input);
+        return this.map(Math.multiply, input);
     };
 
     Matrix.prototype.dividedBy = function (input) {
-        return this.map(Matrix.divide, input);
+        return this.map(Math.divide, input);
     };
 
     Matrix.prototype.replace = function (input) {
-        return this.map(Matrix.substitute, input);
-    };
-
-    Matrix.add = function (item, input) {
-        return item + input;
-    };
-
-    Matrix.subtract = function (item, input) {
-        return item - input;
-    };
-
-    Matrix.multiply = function (item, input) {
-        return item * input;
-    };
-
-    Matrix.divide = function (item, input) {
-        return item / input;
-    };
-
-    Matrix.substitute = function (item, input) {
-        return input;
+        return this.map(Math.substitute, input);
     };
 
     Matrix.prototype.matrixMultiply = function (input) {
@@ -331,7 +311,33 @@ var Matrix = (function () {
 
         return new Matrix(newColumnLength, newItems);
     };
-    Matrix.zeroBased = false;
+    Matrix.isZeroBased = false;
     return Matrix;
 })();
+Math.add = function (x, y) {
+    return x + y;
+};
+
+Math.subtract = function (x, y) {
+    return x - y;
+};
+
+Math.multiply = function (x, y) {
+    return x * y;
+};
+
+Math.divide = function (x, y) {
+    return x / y;
+};
+
+Math.substitute = function (x, y) {
+    return y;
+};
+
+Math.factorial = function (x) {
+    var result = 1;
+    for (var i = 1; i <= x; i++)
+        result *= i;
+    return result;
+};
 //# sourceMappingURL=mathextension.js.map

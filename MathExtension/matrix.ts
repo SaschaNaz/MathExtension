@@ -1,5 +1,5 @@
 class Matrix {
-    static zeroBased = false;
+    static isZeroBased = false;
     get isMatrix() {
         return true;
     }
@@ -23,7 +23,7 @@ class Matrix {
     }
 
     private static getInternalIndex(i: number) {
-        if (Matrix.zeroBased)
+        if (Matrix.isZeroBased)
             return i;
         else if (i <= 0)
             throw new Error("Index should be larger than 0");
@@ -31,7 +31,7 @@ class Matrix {
             return i - 1;
     }
     private static getExternalIndex(i: number) {
-        if (Matrix.zeroBased)
+        if (Matrix.isZeroBased)
             return i;
         else
             return i + 1;
@@ -159,7 +159,7 @@ class Matrix {
         return <Matrix>this.mapFor.apply(this, [func, null, input].concat(argArray));
     }
 
-    mapFor(func: Function, condition: Function, input?: any, ...argArray: any[]) {
+    mapFor(func: Function, condition: (item: number, row: number, column: number) => void, input?: any, ...argArray: any[]) {
         if (input != null && input.isMatrix)
             Matrix.assert(
                 this.columnLength == input.columnLength && this.rowLength == input.rowLength,
@@ -180,10 +180,10 @@ class Matrix {
         return newMatrix;
     }
 
-    forEach(func: (item: number) => void) {
-        this.array.forEach((row: number[]) => {
-            row.forEach((item: number) => {
-                func(item);
+    forEach(func: (item: number, row: number, column: number) => void) {
+        this.array.forEach((rowArray: number[], row: number) => {
+            rowArray.forEach((item: number, column: number) => {
+                func(item, Matrix.getExternalIndex(row), Matrix.getExternalIndex(column));
             });
         });
     }
@@ -225,7 +225,7 @@ class Matrix {
         }
         else {
             columnLength = rowLength;
-            newMatrix.expandRow(1);
+            newMatrix.expandRow(rowLength);
             newMatrix.expandColumn(columnLength);
         }
         return newMatrix;
@@ -270,51 +270,31 @@ class Matrix {
     plus(input: number): Matrix;
     plus(input: Matrix): Matrix;
     plus(input: any) {
-        return this.map(Matrix.add, input);
+        return this.map(Math.add, input);
     }
 
     minus(input: number): Matrix;
     minus(input: Matrix): Matrix;
     minus(input: any) {
-        return this.map(Matrix.subtract, input);
+        return this.map(Math.subtract, input);
     }
 
     times(input: number): Matrix;
     times(input: Matrix): Matrix;
     times(input: any) {
-        return this.map(Matrix.multiply, input);
+        return this.map(Math.multiply, input);
     }
 
     dividedBy(input: number): Matrix;
     dividedBy(input: Matrix): Matrix;
     dividedBy(input: any) {
-        return this.map(Matrix.divide, input);
+        return this.map(Math.divide, input);
     }
 
     replace(input: number): Matrix;
     replace(input: Matrix): Matrix;
     replace(input: any) {
-        return this.map(Matrix.substitute, input);
-    }
-
-    static add(item: number, input: number) {
-        return item + input;
-    }
-
-    static subtract(item: number, input: number) {
-        return item - input;
-    }
-
-    static multiply(item: number, input: number) {
-        return item * input;
-    }
-
-    static divide(item: number, input: number) {
-        return item / input;
-    }
-
-    static substitute(item: number, input: number) {
-        return input;
+        return this.map(Math.substitute, input);
     }
 
     matrixMultiply(input: Matrix) {
