@@ -291,6 +291,12 @@ class Matrix {
         return this.map(Math.divide, input);
     }
 
+    powerOf(input: number): Matrix;
+    powerOf(input: Matrix): Matrix;
+    powerOf(input: any) {
+        return this.map(Math.pow, input);
+    }
+
     replace(input: number): Matrix;
     replace(input: Matrix): Matrix;
     replace(input: any) {
