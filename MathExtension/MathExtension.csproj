@@ -22,6 +22,7 @@
     <Content Include="web.config" />
   </ItemGroup>
   <ItemGroup>
+    <TypeScriptCompile Include="asserthelper.ts" />
     <TypeScriptCompile Include="matrix.ts" />
     <TypeScriptCompile Include="math.ts" />
     <TypeScriptCompile Include="number.ts" />
