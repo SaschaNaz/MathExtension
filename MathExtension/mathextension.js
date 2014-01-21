@@ -40,7 +40,7 @@ var AssertHelper = (function () {
 })();
 var Matrix = (function () {
     function Matrix(columnLength, items) {
-        this.array = [];
+        this._array = [];
         if (columnLength === undefined)
             return;
 
@@ -54,9 +54,9 @@ var Matrix = (function () {
         AssertHelper.assert(items.length % columnLength == 0, "Invalid number of items");
 
         for (var row = 0; row < items.length / columnLength; row++) {
-            this.array.push([]);
+            this._array.push([]);
             for (var column = 0; column < columnLength; column++)
-                this.array[row][column] = items[row * columnLength + column];
+                this._array[row][column] = items[row * columnLength + column];
         }
     }
     Matrix.isMatrix = function (object) {
@@ -68,14 +68,14 @@ var Matrix = (function () {
     };
 
     //this implicitly returns NaN if isNaN(i) is true
-    Matrix.getZeroBasedIndex = function (i) {
+    Matrix._getZeroBasedIndex = function (i) {
         if (Matrix.isZeroBased)
             return i;
         else
             return i - 1;
     };
 
-    Matrix.getUserFriendlyIndex = function (i) {
+    Matrix._getUserFriendlyIndex = function (i) {
         if (Matrix.isZeroBased)
             return i;
         else
@@ -85,7 +85,7 @@ var Matrix = (function () {
     Object.defineProperty(Matrix.prototype, "columnLength", {
         get: function () {
             if (this.rowLength > 0)
-                return this.array[0].length;
+                return this._array[0].length;
             else
                 return 0;
         },
@@ -94,7 +94,7 @@ var Matrix = (function () {
     });
     Object.defineProperty(Matrix.prototype, "rowLength", {
         get: function () {
-            return this.array.length;
+            return this._array.length;
         },
         enumerable: true,
         configurable: true
@@ -102,7 +102,7 @@ var Matrix = (function () {
     Object.defineProperty(Matrix.prototype, "size", {
         get: function () {
             var size = [];
-            var targetArray = this.array;
+            var targetArray = this._array;
             while (Array.isArray(targetArray)) {
                 size.push(targetArray.length);
                 targetArray = targetArray[0];
@@ -124,7 +124,15 @@ var Matrix = (function () {
         enumerable: true,
         configurable: true
     });
-    Matrix.prototype.checkInternalCoordinateValidity = function (coordinate) {
+    Object.defineProperty(Matrix.prototype, "dimension", {
+        get: function () {
+            return this.size.length;
+        },
+        enumerable: true,
+        configurable: true
+    });
+
+    Matrix.prototype._checkInternalCoordinateValidity = function (coordinate) {
         var size = this.size;
         AssertHelper.assertArray(coordinate);
         AssertHelper.assert(coordinate.length == size.length, "Coordinate dimension is not valid for this matrix.");
@@ -134,10 +142,10 @@ var Matrix = (function () {
         });
     };
 
-    Matrix.prototype.getInternalCoordinate = function (index) {
+    Matrix.prototype._getInternalCoordinate = function (index) {
         var row;
         var column;
-        index = Matrix.getZeroBasedIndex(index);
+        index = Matrix._getZeroBasedIndex(index);
         if (this.columnLength > 0) {
             column = index % this.columnLength;
             row = (index - column) / this.columnLength;
@@ -153,16 +161,16 @@ var Matrix = (function () {
         var internalCoordinate = [];
         if (Array.isArray(coordinate) && coordinate.length >= 2) {
             internalCoordinate = coordinate.map(function (i) {
-                return Matrix.getZeroBasedIndex(i);
+                return Matrix._getZeroBasedIndex(i);
             });
         } else {
             var index = coordinate;
-            internalCoordinate = this.getInternalCoordinate(index);
+            internalCoordinate = this._getInternalCoordinate(index);
         }
 
-        if (this.checkInternalCoordinateValidity(internalCoordinate)) {
+        if (this._checkInternalCoordinateValidity(internalCoordinate)) {
             var dimensioner = internalCoordinate.slice(0);
-            var targetArray = this.array;
+            var targetArray = this._array;
             while (dimensioner.length > 0) {
                 targetArray = targetArray[dimensioner.shift()];
             }
@@ -173,22 +181,23 @@ var Matrix = (function () {
 
     Matrix.prototype.setFor = function (coordinate, input) {
         AssertHelper.assertParameter(coordinate);
+        AssertHelper.assertNumber(input);
         var internalCoordinate = [];
         if (Array.isArray(coordinate) && coordinate.length >= 2) {
             internalCoordinate = coordinate.map(function (i) {
-                return Matrix.getZeroBasedIndex(i);
+                return Matrix._getZeroBasedIndex(i);
             });
         } else {
             var index = coordinate;
-            internalCoordinate = this.getInternalCoordinate(index);
+            internalCoordinate = this._getInternalCoordinate(index);
         }
 
-        if (this.checkInternalCoordinateValidity(internalCoordinate)) {
-            //expand
+        if (!this._checkInternalCoordinateValidity(internalCoordinate)) {
+            this.expandSize(coordinate, 0);
         }
 
         var dimensioner = internalCoordinate.slice(0);
-        var targetArray = this.array;
+        var targetArray = this._array;
         while (dimensioner.length > 1) {
             targetArray = targetArray[dimensioner.shift()];
         }
@@ -196,38 +205,17 @@ var Matrix = (function () {
         return this;
     };
 
-    Matrix.prototype.expandRow = function (rowLength) {
-        AssertHelper.assert(this.rowLength < rowLength, "columnLength is already large enough to expand.");
-        while (this.array.length < rowLength) {
-            var rowArray = [];
-            while (rowArray.length < this.columnLength) {
-                rowArray.push(0);
-            }
-            this.array.push(rowArray);
-        }
-    };
-
-    Matrix.prototype.expandColumn = function (columnLength) {
-        AssertHelper.assert(this.columnLength < columnLength, "columnLength is already large enough to expand.");
-        this.array.forEach(function (rowArray) {
-            while (rowArray.length < columnLength) {
-                rowArray.push(0);
-            }
-        });
-    };
-
-    Matrix.expandArray = function (array, targetSize, fill) {
-        var isChildToExpanded = targetSize.length > 1;
+    Matrix._expandArray = function (array, targetSize, fill) {
         var childSize = targetSize.slice(0);
         childSize.shift();
 
         if (targetSize.length > 1) {
             for (var i = 0; i < array.length; i++) {
-                this.expandArray(array[i], childSize, fill);
+                this._expandArray(array[i], childSize, fill);
             }
             for (var i = array.length; i < targetSize[0]; i++) {
                 var childArray = [];
-                this.expandArray(childArray, childSize, fill);
+                this._expandArray(childArray, childSize, fill);
                 array.push(childArray);
             }
         } else if (targetSize.length == 1) {
@@ -249,18 +237,18 @@ var Matrix = (function () {
 
             //targetSize[dimensionDifference - 1]--;
             var newArray = [];
-            Matrix.expandArray(newArray, targetSize, fill);
+            Matrix._expandArray(newArray, targetSize, fill);
 
             //AssertHelper.assert(size.length == targetSize.length, "Coordinate dimension is not valid for this matrix.");
             var targetArray = newArray;
             for (var i = 0; i < dimensionDifference - 1; i++) {
                 targetArray = targetArray[0];
             }
-            targetArray[0] = this.array;
-            Matrix.expandArray(this.array, targetSize.slice(targetSize.length - size.length), fill);
-            this.array = newArray;
+            targetArray[0] = this._array;
+            Matrix._expandArray(this._array, targetSize.slice(targetSize.length - size.length), fill);
+            this._array = newArray;
         } else {
-            Matrix.expandArray(this.array, targetSize, fill);
+            Matrix._expandArray(this._array, targetSize, fill);
         }
     };
 
@@ -289,35 +277,39 @@ var Matrix = (function () {
             AssertHelper.assert(this.columnLength == input.columnLength && this.rowLength == input.rowLength, "Dimensions should match each other");
 
         var newMatrix = this.clone();
-        newMatrix.forEach(function (item, row, column) {
-            if (!condition || condition(item, row, column)) {
+        newMatrix.forEach(function (item, coordinate) {
+            if (!condition || condition(item, coordinate)) {
                 if (input == null)
-                    newMatrix.setFor([row, column], func.apply(null, [item]));
+                    newMatrix.setFor(coordinate, func.apply(null, [item]));
                 else
-                    newMatrix.setFor([row, column], func.apply(null, [item, input.isMatrix ? input.getFor([row, column]) : input].concat(argArray)));
+                    newMatrix.setFor(coordinate, func.apply(null, [item, input.isMatrix ? input.getFor(coordinate) : input].concat(argArray)));
             }
         });
 
-        //for (var row = 0; row < newMatrix.rowLength; row++) {
-        //    for (var column = 0; column < newMatrix.columnLength; column++) {
-        //        var item = newMatrix.array[row][column];
-        //        if (!condition || condition(item, Matrix.getExternalIndex(row), Matrix.getExternalIndex(column))) {
-        //            if (input == null)
-        //                newMatrix.array[row][column] = func.apply(null, [item]);
-        //            else
-        //                newMatrix.array[row][column] = func.apply(null, [item, input.isMatrix ? input.array[row][column] : input].concat(argArray));
-        //        }
-        //    }
-        //}
         return newMatrix;
     };
 
-    Matrix.prototype.forEach = function (func) {
-        this.array.forEach(function (rowArray, row) {
-            rowArray.forEach(function (item, column) {
-                func(item, Matrix.getUserFriendlyIndex(row), Matrix.getUserFriendlyIndex(column));
+    Matrix.prototype._forEach = function (array, func, parentCoordinate, depth) {
+        var _this = this;
+        if (depth == 1) {
+            array.forEach(function (item, index) {
+                func(item, parentCoordinate.concat(index + 1));
             });
-        });
+        } else if (depth > 1) {
+            var shallower = depth - 1;
+            array.forEach(function (childArray, index) {
+                _this._forEach(childArray, func, parentCoordinate.concat(index + 1), shallower);
+            });
+        }
+    };
+
+    Matrix.prototype.forEach = function (func) {
+        this._forEach(this._array, func, [], this.dimension);
+        //this._array.forEach((rowArray: number[], row: number) => {
+        //    rowArray.forEach((item: number, column: number) => {
+        //        func(item, [Matrix._getUserFriendlyIndex(row), Matrix._getUserFriendlyIndex(column)]);
+        //    });
+        //});
     };
 
     Matrix.prototype.toString = function () {
@@ -325,7 +317,7 @@ var Matrix = (function () {
         for (var row = 0; row < this.rowLength; row++) {
             var strArray = ['['];
             for (var column = 0; column < this.columnLength; column++)
-                strArray.push(this.array[row][column]);
+                strArray.push(this._array[row][column]);
             strArray.push(']');
             outputArray.push(strArray.join(' '));
         }
@@ -340,7 +332,7 @@ var Matrix = (function () {
         for (var row = 0; row < this.rowLength; row++) {
             var strArray = [];
             for (var column = 0; column < this.columnLength; column++)
-                strArray.push(this.array[row][column]);
+                strArray.push(this._array[row][column]);
             outputArray.push(strArray.join(' '));
         }
         return '[' + outputArray.join('; ') + ']';
@@ -355,11 +347,9 @@ var Matrix = (function () {
 
     Matrix.getIdentityMatrix = function (size) {
         AssertHelper.assertNumber(size);
-        var newMatrix = new Matrix();
-        newMatrix.expandRow(size);
-        newMatrix.expandColumn(size);
+        var newMatrix = Matrix.getZeroMatrix([size, size]);
         for (var i = 0; i < size; i++)
-            newMatrix.array[i][i] = 1;
+            newMatrix._array[i][i] = 1;
         return newMatrix;
     };
 
@@ -367,11 +357,10 @@ var Matrix = (function () {
         AssertHelper.assertNumber(start, end, pointNumber);
         AssertHelper.assert(end > start, "End should be larger than start.");
         var newMatrix = new Matrix();
-        newMatrix.expandRow(1);
-        newMatrix.expandColumn(pointNumber);
+        newMatrix.expandSize([1, pointNumber]);
         var gap = (end - start) / (pointNumber - 1);
         for (var i = 0; i < pointNumber; i++)
-            newMatrix.array[0][i] = start + gap * i;
+            newMatrix._array[0][i] = start + gap * i;
         return newMatrix;
     };
 
@@ -382,10 +371,9 @@ var Matrix = (function () {
             gap = 1;
         var newMatrix = new Matrix();
         var length = Math.floor((end - start) / gap) + 1;
-        newMatrix.expandRow(1);
-        newMatrix.expandColumn(length);
+        newMatrix.expandSize([1, length]);
         for (var i = 0; i < length; i++)
-            newMatrix.array[0][i] = start + gap * i;
+            newMatrix._array[0][i] = start + gap * i;
         return newMatrix;
     };
 
@@ -417,11 +405,11 @@ var Matrix = (function () {
         AssertHelper.assert(this.columnLength == input.rowLength, "Row length of the input matrix should be same with column length of the original one.");
         var newColumnLength = input.columnLength;
         var newItems = [];
-        this.array.forEach(function (rowArray) {
+        this._array.forEach(function (rowArray) {
             for (var column = 0; column < input.columnLength; column++) {
                 var newItem = 0;
                 for (var row = 0; row < input.rowLength; row++)
-                    newItem += rowArray[row] * input.array[row][column];
+                    newItem += rowArray[row] * input._array[row][column];
                 newItems.push(newItem);
             }
         });
@@ -430,9 +418,10 @@ var Matrix = (function () {
     };
 
     Matrix.prototype.transpose = function () {
+        AssertHelper.assert(this.dimension == 2, "Transpose function only supports two-dimensional matrices.");
         var newMatrix = Matrix.getZeroMatrix([this.columnLength, this.rowLength]);
-        this.forEach(function (i, r, c) {
-            newMatrix.setFor([c, r], i);
+        this.forEach(function (item, coordinate) {
+            newMatrix.setFor([coordinate[1], coordinate[0]], item);
         });
         return newMatrix;
     };
