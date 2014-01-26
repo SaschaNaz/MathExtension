@@ -142,21 +142,27 @@ var Matrix = (function () {
         });
     };
 
-    Matrix.prototype._getInternalCoordinate = function (index) {
-        var row;
-        var column;
+    Matrix.prototype._getInternalCoordinateFromIndex = function (index) {
+        AssertHelper.assertNumber(index);
         index = Matrix._getZeroBasedIndex(index);
-        if (this.columnLength > 0) {
-            column = index % this.columnLength;
-            row = (index - column) / this.columnLength;
-        } else {
-            column = index;
-            row = 0;
+        AssertHelper.assert(index >= 0, "Too low index.");
+        AssertHelper.assert(index < this.serialSize, "Index is larger than the size of the matrix.");
+
+        var size = this.size;
+        var dimension = size.length;
+        var coordinate = [];
+        var higherIndex = index;
+
+        while (coordinate.length < dimension) {
+            var currentDimensionSize = size.pop();
+            coordinate.unshift(higherIndex % currentDimensionSize);
+            higherIndex = Math.floor(higherIndex / currentDimensionSize);
         }
-        return [row, column];
+
+        return coordinate;
     };
 
-    Matrix.prototype.getFor = function (coordinate) {
+    Matrix.prototype._getInternalCoordinate = function (coordinate) {
         AssertHelper.assertParameter(coordinate);
         var internalCoordinate = [];
         if (Array.isArray(coordinate)) {
@@ -165,8 +171,15 @@ var Matrix = (function () {
             });
         } else {
             var index = coordinate;
-            internalCoordinate = this._getInternalCoordinate(index);
+            internalCoordinate = this._getInternalCoordinateFromIndex(index);
         }
+
+        return internalCoordinate;
+    };
+
+    Matrix.prototype.getFor = function (coordinate) {
+        AssertHelper.assertParameter(coordinate);
+        var internalCoordinate = this._getInternalCoordinate(coordinate);
 
         if (this._checkInternalCoordinateValidity(internalCoordinate)) {
             var dimensioner = internalCoordinate.slice(0);
@@ -182,15 +195,7 @@ var Matrix = (function () {
     Matrix.prototype.setFor = function (coordinate, input) {
         AssertHelper.assertParameter(coordinate);
         AssertHelper.assertNumber(input);
-        var internalCoordinate = [];
-        if (Array.isArray(coordinate)) {
-            internalCoordinate = coordinate.map(function (i) {
-                return Matrix._getZeroBasedIndex(i);
-            });
-        } else {
-            var index = coordinate;
-            internalCoordinate = this._getInternalCoordinate(index);
-        }
+        var internalCoordinate = this._getInternalCoordinate(coordinate);
 
         if (!this._checkInternalCoordinateValidity(internalCoordinate)) {
             this.expandSize(coordinate, 0);
@@ -304,6 +309,27 @@ var Matrix = (function () {
     };
 
     Matrix.prototype.forEach = function (func) {
+        //var stack = [this._array];
+        //var indexes = [0];
+        //var dimension = this.dimension;
+        //while (stack.length > 0) {
+        //    if (indexes[0] < stack[0].length) {
+        //        if (stack.length == dimension) {
+        //            outputArray.push(stack[0][indexes[0]]);
+        //            indexes[0]++;
+        //        }
+        //        else {
+        //            outputArray.push('[');
+        //            stack.unshift(stack[0][indexes[0]]);
+        //            indexes[0]++;
+        //            indexes.unshift(0);
+        //        }
+        //    }
+        //    else {
+        //        stack.shift();
+        //        indexes.shift();
+        //    }
+        //}
         Matrix._forEach(this._array, func, [], this.dimension);
     };
 
