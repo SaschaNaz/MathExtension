@@ -159,7 +159,7 @@ var Matrix = (function () {
     Matrix.prototype.getFor = function (coordinate) {
         AssertHelper.assertParameter(coordinate);
         var internalCoordinate = [];
-        if (Array.isArray(coordinate) && coordinate.length >= 2) {
+        if (Array.isArray(coordinate)) {
             internalCoordinate = coordinate.map(function (i) {
                 return Matrix._getZeroBasedIndex(i);
             });
@@ -183,7 +183,7 @@ var Matrix = (function () {
         AssertHelper.assertParameter(coordinate);
         AssertHelper.assertNumber(input);
         var internalCoordinate = [];
-        if (Array.isArray(coordinate) && coordinate.length >= 2) {
+        if (Array.isArray(coordinate)) {
             internalCoordinate = coordinate.map(function (i) {
                 return Matrix._getZeroBasedIndex(i);
             });
@@ -289,38 +289,48 @@ var Matrix = (function () {
         return newMatrix;
     };
 
-    Matrix.prototype._forEach = function (array, func, parentCoordinate, depth) {
+    Matrix._forEach = function (array, func, parentCoordinate, depth) {
         var _this = this;
         if (depth == 1) {
             array.forEach(function (item, index) {
-                func(item, parentCoordinate.concat(index + 1));
+                func(item, parentCoordinate.concat(Matrix._getUserFriendlyIndex(index)));
             });
         } else if (depth > 1) {
             var shallower = depth - 1;
             array.forEach(function (childArray, index) {
-                _this._forEach(childArray, func, parentCoordinate.concat(index + 1), shallower);
+                _this._forEach(childArray, func, parentCoordinate.concat(Matrix._getUserFriendlyIndex(index)), shallower);
             });
         }
     };
 
     Matrix.prototype.forEach = function (func) {
-        this._forEach(this._array, func, [], this.dimension);
-        //this._array.forEach((rowArray: number[], row: number) => {
-        //    rowArray.forEach((item: number, column: number) => {
-        //        func(item, [Matrix._getUserFriendlyIndex(row), Matrix._getUserFriendlyIndex(column)]);
-        //    });
-        //});
+        Matrix._forEach(this._array, func, [], this.dimension);
     };
 
     Matrix.prototype.toString = function () {
-        var outputArray = [];
-        for (var row = 0; row < this.rowLength; row++) {
-            var strArray = ['['];
-            for (var column = 0; column < this.columnLength; column++)
-                strArray.push(this._array[row][column]);
-            strArray.push(']');
-            outputArray.push(strArray.join(' '));
+        var outputArray = ['['];
+        var stack = [this._array];
+        var indexes = [0];
+
+        var dimension = this.dimension;
+        while (stack.length > 0) {
+            if (indexes[0] < stack[0].length) {
+                if (stack.length == dimension) {
+                    outputArray.push(stack[0][indexes[0]]);
+                    indexes[0]++;
+                } else {
+                    outputArray.push('[');
+                    stack.unshift(stack[0][indexes[0]]);
+                    indexes[0]++;
+                    indexes.unshift(0);
+                }
+            } else {
+                stack.shift();
+                indexes.shift();
+                outputArray.push(']');
+            }
         }
+
         if (outputArray.length > 0)
             return outputArray.join('\r\n');
         else
@@ -357,10 +367,10 @@ var Matrix = (function () {
         AssertHelper.assertNumber(start, end, pointNumber);
         AssertHelper.assert(end > start, "End should be larger than start.");
         var newMatrix = new Matrix();
-        newMatrix.expandSize([1, pointNumber]);
+        newMatrix.expandSize([pointNumber]);
         var gap = (end - start) / (pointNumber - 1);
         for (var i = 0; i < pointNumber; i++)
-            newMatrix._array[0][i] = start + gap * i;
+            newMatrix._array[i] = start + gap * i;
         return newMatrix;
     };
 
@@ -371,9 +381,9 @@ var Matrix = (function () {
             gap = 1;
         var newMatrix = new Matrix();
         var length = Math.floor((end - start) / gap) + 1;
-        newMatrix.expandSize([1, length]);
+        newMatrix.expandSize([length]);
         for (var i = 0; i < length; i++)
-            newMatrix._array[0][i] = start + gap * i;
+            newMatrix._array[i] = start + gap * i;
         return newMatrix;
     };
 

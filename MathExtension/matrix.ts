@@ -23,7 +23,7 @@ class Matrix {
             return i + 1;
     }
 
-    private _array: number[][] = [];
+    private _array: any[] = [];
     get columnLength() {
         if (this.rowLength > 0)
             return this._array[0].length;
@@ -252,22 +252,34 @@ class Matrix {
 
     forEach(func: (item: number, coordinate: number[]) => void) {
         Matrix._forEach(this._array, func, [], this.dimension);
-        //this._array.forEach((rowArray: number[], row: number) => {
-        //    rowArray.forEach((item: number, column: number) => {
-        //        func(item, [Matrix._getUserFriendlyIndex(row), Matrix._getUserFriendlyIndex(column)]);
-        //    });
-        //});
     }
 
     toString() {
-        var outputArray: string[] = [];
-        for (var row = 0; row < this.rowLength; row++) {
-            var strArray: any[] = ['['];
-            for (var column = 0; column < this.columnLength; column++)
-                strArray.push(this._array[row][column]);
-            strArray.push(']');
-            outputArray.push(strArray.join(' '));
+        var outputArray: string[] = ['['];
+        var stack = [this._array];
+        var indexes = [0];
+
+        var dimension = this.dimension;
+        while (stack.length > 0) {
+            if (indexes[0] < stack[0].length) {
+                if (stack.length == dimension) {
+                    outputArray.push(stack[0][indexes[0]]);
+                    indexes[0]++;
+                }
+                else {
+                    outputArray.push('[');
+                    stack.unshift(stack[0][indexes[0]]);
+                    indexes[0]++;
+                    indexes.unshift(0);
+                }
+            }
+            else {
+                stack.shift();
+                indexes.shift();
+                outputArray.push(']');
+            }
         }
+
         if (outputArray.length > 0)
             return outputArray.join('\r\n');
         else
@@ -304,10 +316,10 @@ class Matrix {
         AssertHelper.assertNumber(start, end, pointNumber);
         AssertHelper.assert(end > start, "End should be larger than start.");
         var newMatrix = new Matrix();
-        newMatrix.expandSize([1, pointNumber]);
+        newMatrix.expandSize([pointNumber]);
         var gap = (end - start) / (pointNumber - 1);
         for (var i = 0; i < pointNumber; i++)
-            newMatrix._array[0][i] = start + gap * i;
+            newMatrix._array[i] = start + gap * i;
         return newMatrix;
     }
 
@@ -318,9 +330,9 @@ class Matrix {
             gap = 1;
         var newMatrix = new Matrix();
         var length = Math.floor((end - start) / gap) + 1;
-        newMatrix.expandSize([1, length]);
+        newMatrix.expandSize([length]);
         for (var i = 0; i < length; i++)
-            newMatrix._array[0][i] = start + gap * i;
+            newMatrix._array[i] = start + gap * i;
         return newMatrix;
     }
 
