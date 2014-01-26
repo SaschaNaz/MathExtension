@@ -9,33 +9,33 @@ class Matrix {
     }
 
     //this implicitly returns NaN if isNaN(i) is true
-    private static getZeroBasedIndex(i: number) {
+    private static _getZeroBasedIndex(i: number) {
         if (Matrix.isZeroBased)
             return i;
         else
             return i - 1;
     }
 
-    private static getUserFriendlyIndex(i: number) {
+    private static _getUserFriendlyIndex(i: number) {
         if (Matrix.isZeroBased)
             return i;
         else
             return i + 1;
     }
 
-    private array: number[][] = [];
+    private _array: any[] = [];
     get columnLength() {
         if (this.rowLength > 0)
-            return this.array[0].length;
+            return this._array[0].length;
         else
             return 0;
     }
     get rowLength() {
-        return this.array.length;
+        return this._array.length;
     }
     get size() {
         var size: number[] = [];
-        var targetArray = <any[]>this.array;
+        var targetArray = <any[]>this._array;
         while (Array.isArray(targetArray)) {
             size.push(targetArray.length);
             targetArray = targetArray[0];
@@ -50,7 +50,11 @@ class Matrix {
         });
         return serial;
     }
-    private checkInternalCoordinateValidity(coordinate: number[]) {
+    get dimension() {
+        return this.size.length;
+    }
+
+    private _checkInternalCoordinateValidity(coordinate: number[]) {
         var size = this.size;
         AssertHelper.assertArray(coordinate);
         AssertHelper.assert(coordinate.length == size.length, "Coordinate dimension is not valid for this matrix.");
@@ -77,45 +81,59 @@ class Matrix {
 
         //columnLength >= 1, items exist, items.length % columnLength == 0
         for (var row = 0; row < items.length / columnLength; row++) {
-            this.array.push([]);
+            this._array.push([]);
             for (var column = 0; column < columnLength; column++)
-                this.array[row][column] = items[row * columnLength + column];
+                this._array[row][column] = items[row * columnLength + column];
         }
     }
 
-    private getInternalCoordinate(index: number) {
-        var row: number;
-        var column: number;
-        index = Matrix.getZeroBasedIndex(index);
-        if (this.columnLength > 0) {
-            column = index % this.columnLength;
-            row = (index - column) / this.columnLength;
+    private _getInternalCoordinateFromIndex(index: number) {
+        AssertHelper.assertNumber(index);
+        index = Matrix._getZeroBasedIndex(index);
+        AssertHelper.assert(index >= 0, "Too low index.");
+        AssertHelper.assert(index < this.serialSize, "Index is larger than the size of the matrix.");
+
+        var size = this.size;
+        var dimension = size.length;
+        var coordinate: number[] = [];
+        var higherIndex = index;
+
+        while (coordinate.length < dimension) {
+            var currentDimensionSize = size.pop();
+            coordinate.unshift(higherIndex % currentDimensionSize);
+            higherIndex = Math.floor(higherIndex / currentDimensionSize);
+        }
+
+        return coordinate;
+    }
+
+    private _getInternalCoordinate(index: number): number[];
+    private _getInternalCoordinate(coordinate: number[]): number[];
+    private _getInternalCoordinate(coordinate: any) {
+        AssertHelper.assertParameter(coordinate);
+        var internalCoordinate: number[] = [];
+        if (Array.isArray(coordinate)) {
+            internalCoordinate = (<number[]>coordinate).map((i) => {
+                return Matrix._getZeroBasedIndex(i);
+            });
         }
         else {
-            column = index;
-            row = 0;
+            var index = coordinate;
+            internalCoordinate = this._getInternalCoordinateFromIndex(index);
         }
-        return [row, column];
+
+        return internalCoordinate;
     }
 
     getFor(index: number): number;
     getFor(coordinate: number[]): number;
     getFor(coordinate: any) {
         AssertHelper.assertParameter(coordinate);
-        var internalCoordinate: number[] = [];
-        if (Array.isArray(coordinate) && (<number[]>coordinate).length >= 2) {
-            internalCoordinate = (<number[]>coordinate).map((i) => {
-                return Matrix.getZeroBasedIndex(i);
-            });
-        }
-        else {
-            var index = coordinate;
-            internalCoordinate = this.getInternalCoordinate(index);
-        }
+        var internalCoordinate = this._getInternalCoordinate(coordinate);
 
-        if (this.checkInternalCoordinateValidity(internalCoordinate)) {
+        if (this._checkInternalCoordinateValidity(internalCoordinate)) {
             var dimensioner = (<number[]>internalCoordinate).slice(0);
-            var targetArray = <any[]>this.array;
+            var targetArray = <any[]>this._array;
             while (dimensioner.length > 0) {
                 targetArray = targetArray[dimensioner.shift()];
             }
@@ -129,23 +147,15 @@ class Matrix {
     setFor(coordinate: number[], input: number): Matrix;
     setFor(coordinate: any, input: number) {
         AssertHelper.assertParameter(coordinate);
-        var internalCoordinate: number[] = [];
-        if (Array.isArray(coordinate) && (<number[]>coordinate).length >= 2) {
-            internalCoordinate = (<number[]>coordinate).map((i) => {
-                return Matrix.getZeroBasedIndex(i);
-            });
-        }
-        else {
-            var index = coordinate;
-            internalCoordinate = this.getInternalCoordinate(index);
-        }
+        AssertHelper.assertNumber(input);
+        var internalCoordinate = this._getInternalCoordinate(coordinate);
 
-        if (this.checkInternalCoordinateValidity(internalCoordinate)) {
-            //expand
+        if (!this._checkInternalCoordinateValidity(internalCoordinate)) {
+            this.expandSize(coordinate, 0);
         }
 
         var dimensioner = (<number[]>internalCoordinate).slice(0);
-        var targetArray = <any[]>this.array;
+        var targetArray = <any[]>this._array;
         while (dimensioner.length > 1) {
             targetArray = targetArray[dimensioner.shift()];
         }
@@ -153,38 +163,17 @@ class Matrix {
         return this;
     }
 
-    private expandRow(rowLength: number) {
-        AssertHelper.assert(this.rowLength < rowLength, "columnLength is already large enough to expand.");
-        while (this.array.length < rowLength) {
-            var rowArray: number[] = [];
-            while (rowArray.length < this.columnLength) {
-                rowArray.push(0);
-            }
-            this.array.push(rowArray);
-        }
-    }
-
-    private expandColumn(columnLength: number) {
-        AssertHelper.assert(this.columnLength < columnLength, "columnLength is already large enough to expand.");
-        this.array.forEach((rowArray) => {
-            while (rowArray.length < columnLength) {
-                rowArray.push(0);
-            }
-        });
-    }
-
-    private static expandArray(array: any[], targetSize: number[], fill: number) {
-        var isChildToExpanded = targetSize.length > 1;
+    private static _expandArray(array: any[], targetSize: number[], fill: number) {
         var childSize = targetSize.slice(0);
         childSize.shift();
 
         if (targetSize.length > 1) {
             for (var i = 0; i < array.length; i++) {
-                this.expandArray(array[i], childSize, fill);
+                this._expandArray(array[i], childSize, fill);
             }
             for (var i = array.length; i < targetSize[0]; i++) {
                 var childArray: any[] = [];
-                this.expandArray(childArray, childSize, fill);
+                this._expandArray(childArray, childSize, fill);
                 array.push(childArray);
             }
         }
@@ -196,7 +185,7 @@ class Matrix {
     }
 
     //should be more efficient
-    private expandSize(targetSize: number[], fill = 0) {
+    expandSize(targetSize: number[], fill = 0) {
         var size = this.size;
         AssertHelper.assertArray(targetSize);
         AssertHelper.assert(targetSize.length >= size.length, "Target dimension should be larger than or equal with original dimension");
@@ -205,23 +194,23 @@ class Matrix {
             var dimensionDifference = targetSize.length - size.length;
             //targetSize[dimensionDifference - 1]--;
             var newArray: any[] = [];
-            Matrix.expandArray(newArray, targetSize, fill);
+            Matrix._expandArray(newArray, targetSize, fill);
             //AssertHelper.assert(size.length == targetSize.length, "Coordinate dimension is not valid for this matrix.");
 
             var targetArray = newArray;
             for (var i = 0; i < dimensionDifference - 1; i++) {
                 targetArray = <any[]>targetArray[0];
             }
-            targetArray[0] = this.array;
-            Matrix.expandArray(this.array, targetSize.slice(targetSize.length - size.length), fill);
-            this.array = newArray;
+            targetArray[0] = this._array;
+            Matrix._expandArray(this._array, targetSize.slice(targetSize.length - size.length), fill);
+            this._array = newArray;
         }
         else {
-            Matrix.expandArray(this.array, targetSize, fill);
+            Matrix._expandArray(this._array, targetSize, fill);
         }
     }
 
-    private clone() {
+    clone() {
         var items: number[] = [];
         this.forEach((item) => {
             items.push(item);
@@ -233,53 +222,92 @@ class Matrix {
         return <Matrix>this.mapFor.apply(this, [func, null, input].concat(argArray));
     }
 
-    mapFor(func: Function, condition: (item: number, row: number, column: number) => void, input?: any, ...argArray: any[]) {
+    mapFor(func: Function, condition: (item: number, coordinate: number[]) => void, input?: any, ...argArray: any[]) {
         if (input != null && input.isMatrix)
             AssertHelper.assert(
                 this.columnLength == input.columnLength && this.rowLength == input.rowLength,
                 "Dimensions should match each other");
 
         var newMatrix = this.clone();
-        newMatrix.forEach((item, row, column) => {
-            if (!condition || condition(item, row, column)) {
+        newMatrix.forEach((item, coordinate) => {
+            if (!condition || condition(item, coordinate)) {
                 if (input == null)
-                    newMatrix.setFor([row, column], func.apply(null, [item]));
+                    newMatrix.setFor(coordinate, func.apply(null, [item]));
                 else
-                    newMatrix.setFor([row, column], func.apply(null, [item, input.isMatrix ? (<Matrix>input).getFor([row, column]) : input].concat(argArray)));
+                    newMatrix.setFor(coordinate, func.apply(null, [item, input.isMatrix ? (<Matrix>input).getFor(coordinate) : input].concat(argArray)));
             }
         });
 
-        //for (var row = 0; row < newMatrix.rowLength; row++) {
-        //    for (var column = 0; column < newMatrix.columnLength; column++) {
-        //        var item = newMatrix.array[row][column];
-        //        if (!condition || condition(item, Matrix.getExternalIndex(row), Matrix.getExternalIndex(column))) {
-        //            if (input == null)
-        //                newMatrix.array[row][column] = func.apply(null, [item]);
-        //            else
-        //                newMatrix.array[row][column] = func.apply(null, [item, input.isMatrix ? input.array[row][column] : input].concat(argArray));
-        //        }
-        //    }
-        //}
         return newMatrix;
     }
 
-    forEach(func: (item: number, row: number, column: number) => void) {
-        this.array.forEach((rowArray: number[], row: number) => {
-            rowArray.forEach((item: number, column: number) => {
-                func(item, Matrix.getUserFriendlyIndex(row), Matrix.getUserFriendlyIndex(column));
+    private static _forEach(array: any[], func: (item: number, coordinate: number[]) => void, parentCoordinate: number[], depth: number) {
+        if (depth == 1) {
+            (<number[]>array).forEach((item, index) => {
+                func(item, parentCoordinate.concat(Matrix._getUserFriendlyIndex(index)));
             });
-        });
+        }
+        else if (depth > 1) {
+            var shallower = depth - 1;
+            (<any[][]>array).forEach((childArray, index) => {
+                this._forEach(childArray, func, parentCoordinate.concat(Matrix._getUserFriendlyIndex(index)), shallower);
+            });
+        }
+    }
+
+    forEach(func: (item: number, coordinate: number[]) => void) {
+        //var stack = [this._array];
+        //var indexes = [0];
+
+        //var dimension = this.dimension;
+        //while (stack.length > 0) {
+        //    if (indexes[0] < stack[0].length) {
+        //        if (stack.length == dimension) {
+        //            outputArray.push(stack[0][indexes[0]]);
+        //            indexes[0]++;
+        //        }
+        //        else {
+        //            outputArray.push('[');
+        //            stack.unshift(stack[0][indexes[0]]);
+        //            indexes[0]++;
+        //            indexes.unshift(0);
+        //        }
+        //    }
+        //    else {
+        //        stack.shift();
+        //        indexes.shift();
+        //    }
+        //}
+
+        Matrix._forEach(this._array, func, [], this.dimension);
     }
 
     toString() {
-        var outputArray: string[] = [];
-        for (var row = 0; row < this.rowLength; row++) {
-            var strArray: any[] = ['['];
-            for (var column = 0; column < this.columnLength; column++)
-                strArray.push(this.array[row][column]);
-            strArray.push(']');
-            outputArray.push(strArray.join(' '));
+        var outputArray: string[] = ['['];
+        var stack = [this._array];
+        var indexes = [0];
+
+        var dimension = this.dimension;
+        while (stack.length > 0) {
+            if (indexes[0] < stack[0].length) {
+                if (stack.length == dimension) {
+                    outputArray.push(stack[0][indexes[0]]);
+                    indexes[0]++;
+                }
+                else {
+                    outputArray.push('[');
+                    stack.unshift(stack[0][indexes[0]]);
+                    indexes[0]++;
+                    indexes.unshift(0);
+                }
+            }
+            else {
+                stack.shift();
+                indexes.shift();
+                outputArray.push(']');
+            }
         }
+
         if (outputArray.length > 0)
             return outputArray.join('\r\n');
         else
@@ -291,7 +319,7 @@ class Matrix {
         for (var row = 0; row < this.rowLength; row++) {
             var strArray: any[] = [];
             for (var column = 0; column < this.columnLength; column++)
-                strArray.push(this.array[row][column]);
+                strArray.push(this._array[row][column]);
             outputArray.push(strArray.join(' '));
         }
         return '[' + outputArray.join('; ') + ']';
@@ -306,11 +334,9 @@ class Matrix {
 
     static getIdentityMatrix(size: number) {
         AssertHelper.assertNumber(size);
-        var newMatrix = new Matrix();
-        newMatrix.expandRow(size);
-        newMatrix.expandColumn(size);
+        var newMatrix = Matrix.getZeroMatrix([size, size]);
         for (var i = 0; i < size; i++)
-            newMatrix.array[i][i] = 1;
+            newMatrix._array[i][i] = 1;
         return newMatrix;
     }
 
@@ -318,11 +344,10 @@ class Matrix {
         AssertHelper.assertNumber(start, end, pointNumber);
         AssertHelper.assert(end > start, "End should be larger than start.");
         var newMatrix = new Matrix();
-        newMatrix.expandRow(1);
-        newMatrix.expandColumn(pointNumber);
+        newMatrix.expandSize([pointNumber]);
         var gap = (end - start) / (pointNumber - 1);
         for (var i = 0; i < pointNumber; i++)
-            newMatrix.array[0][i] = start + gap * i;
+            newMatrix._array[i] = start + gap * i;
         return newMatrix;
     }
 
@@ -333,10 +358,9 @@ class Matrix {
             gap = 1;
         var newMatrix = new Matrix();
         var length = Math.floor((end - start) / gap) + 1;
-        newMatrix.expandRow(1);
-        newMatrix.expandColumn(length);
+        newMatrix.expandSize([length]);
         for (var i = 0; i < length; i++)
-            newMatrix.array[0][i] = start + gap * i;
+            newMatrix._array[i] = start + gap * i;
         return newMatrix;
     }
 
@@ -381,11 +405,11 @@ class Matrix {
             "Row length of the input matrix should be same with column length of the original one.");
         var newColumnLength = input.columnLength;
         var newItems: number[] = [];
-        this.array.forEach((rowArray) => {
+        this._array.forEach((rowArray) => {
             for (var column = 0; column < input.columnLength; column++) {
                 var newItem = 0;
                 for (var row = 0; row < input.rowLength; row++)
-                    newItem += rowArray[row] * input.array[row][column];
+                    newItem += rowArray[row] * input._array[row][column];
                 newItems.push(newItem);
             }
         });
@@ -394,9 +418,10 @@ class Matrix {
     }
 
     transpose() {
+        AssertHelper.assert(this.dimension == 2, "Transpose function only supports two-dimensional matrices.");
         var newMatrix = Matrix.getZeroMatrix([this.columnLength, this.rowLength]);
-        this.forEach((i, r, c) => {
-            newMatrix.setFor([c, r], i);
+        this.forEach((item, coordinate) => {
+            newMatrix.setFor([coordinate[1], coordinate[0]], item);
         });
         return newMatrix;
     }
