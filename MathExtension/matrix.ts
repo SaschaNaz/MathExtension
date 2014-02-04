@@ -90,8 +90,6 @@ class Matrix {
     private _getInternalCoordinateFromIndex(index: number) {
         AssertHelper.assertNumber(index);
         index = Matrix._getZeroBasedIndex(index);
-        AssertHelper.assert(index >= 0, "Too low index.");
-        AssertHelper.assert(index < this.serialSize, "Index is larger than the size of the matrix.");
 
         var size = this.size;
         var dimension = size.length;
@@ -100,7 +98,10 @@ class Matrix {
 
         while (coordinate.length < dimension) {
             var currentDimensionSize = size.pop();
-            coordinate.unshift(higherIndex % currentDimensionSize);
+            if (currentDimensionSize > 0)
+                coordinate.unshift(higherIndex % currentDimensionSize);
+            else
+                coordinate.unshift(higherIndex);
             higherIndex = Math.floor(higherIndex / currentDimensionSize);
         }
 
@@ -147,11 +148,10 @@ class Matrix {
     setFor(coordinate: number[], input: number): Matrix;
     setFor(coordinate: any, input: number) {
         AssertHelper.assertParameter(coordinate);
-        AssertHelper.assertNumber(input);
         var internalCoordinate = this._getInternalCoordinate(coordinate);
 
         if (!this._checkInternalCoordinateValidity(internalCoordinate)) {
-            this.expandSize(coordinate, 0);
+            this.expandSize(internalCoordinate.map((i: number) => { return i + 1 }) , 0);
         }
 
         var dimensioner = (<number[]>internalCoordinate).slice(0);
@@ -159,7 +159,7 @@ class Matrix {
         while (dimensioner.length > 1) {
             targetArray = targetArray[dimensioner.shift()];
         }
-        targetArray[dimensioner.shift()] = input;
+        targetArray[dimensioner.shift()] = Number(input);
         return this;
     }
 
@@ -309,7 +309,7 @@ class Matrix {
         }
 
         if (outputArray.length > 0)
-            return outputArray.join('\r\n');
+            return outputArray.join(' ');
         else
             return "(Empty matrix)";
     }
