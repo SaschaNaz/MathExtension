@@ -1,4 +1,0 @@
-MathExtension
-=============
-
-Math for JavaScript
