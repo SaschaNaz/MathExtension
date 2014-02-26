@@ -71,7 +71,7 @@ class Matrix {
             return; // please do nothing, return an empty matrix
 
         AssertHelper.assertNumber(columnLength);
-        AssertHelper.assert(Array.isArray(items) && items.length > 0, "Items are required to make a matrix.");
+        AssertHelper.assertArray(items);
         if (columnLength == null)
             columnLength = Number(items.length); // giving dynamic length
 
