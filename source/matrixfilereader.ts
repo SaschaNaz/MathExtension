@@ -12,7 +12,7 @@
 
 class BlobStream {
     private indexInSlice = 0;
-    private slice: ArrayBuffer;
+    private slice = new ArrayBuffer(0);
     private sliceIndex: number;
     private sliceSize = 10240;//10 MiB, the size of the resulting slice
     private left: number;

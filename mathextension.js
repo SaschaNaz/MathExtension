@@ -506,6 +506,7 @@ var BlobStream = (function () {
     function BlobStream(blob) {
         this.blob = blob;
         this.indexInSlice = 0;
+        this.slice = new ArrayBuffer(0);
         this.sliceSize = 10240;
         this.left = blob.size;
     }
