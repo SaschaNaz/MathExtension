@@ -52,22 +52,20 @@ class BlobStream {
     readLine(oncomplete: (result: string) => any) {//currently only supports ASCII
         var result = '';
         var view = new Uint8Array(this.slice);
-        var i: number;
         var asyncFunction = () => {
-            for (i = this.indexInSlice; i < this.slice.byteLength; i++) {
-                if (view[i] === 0x0A)
-                    break;
+            var i = Array.prototype.indexOf.call(this.slice, 0x0A);
+            if (i == -1) {
+                if (this.left) {
+                    result += String.fromCharCode.apply(null, view.subarray(this.indexInSlice));
+                    this.readNextSlice(() => {
+                        i = 0;
+                        view = new Uint8Array(this.slice);
+                        window.setImmediate(asyncFunction);
+                    });
+                }
+                else
+                    oncomplete(null);
             }
-            if (view[i] !== 0x0A) {
-                result += String.fromCharCode.apply(null, view.subarray(this.indexInSlice));
-                this.readNextSlice(() => {
-                    i = 0;
-                    view = new Uint8Array(this.slice);
-                    window.setImmediate(asyncFunction);
-                });
-            }
-            else if (this.left == 0)
-                oncomplete(null);
             else {
                 result += String.fromCharCode.apply(null, view.subarray(this.indexInSlice, i));
                 this.indexInSlice = i + 1;

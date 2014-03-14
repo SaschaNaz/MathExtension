@@ -542,22 +542,19 @@ var BlobStream = (function () {
         var _this = this;
         var result = '';
         var view = new Uint8Array(this.slice);
-        var i;
         var asyncFunction = function () {
-            for (i = _this.indexInSlice; i < _this.slice.byteLength; i++) {
-                if (view[i] === 0x0A)
-                    break;
-            }
-            if (view[i] !== 0x0A) {
-                result += String.fromCharCode.apply(null, view.subarray(_this.indexInSlice));
-                _this.readNextSlice(function () {
-                    i = 0;
-                    view = new Uint8Array(_this.slice);
-                    window.setImmediate(asyncFunction);
-                });
-            } else if (_this.left == 0)
-                oncomplete(null);
-            else {
+            var i = Array.prototype.indexOf.call(_this.slice, 0x0A);
+            if (i == -1) {
+                if (_this.left) {
+                    result += String.fromCharCode.apply(null, view.subarray(_this.indexInSlice));
+                    _this.readNextSlice(function () {
+                        i = 0;
+                        view = new Uint8Array(_this.slice);
+                        window.setImmediate(asyncFunction);
+                    });
+                } else
+                    oncomplete(null);
+            } else {
                 result += String.fromCharCode.apply(null, view.subarray(_this.indexInSlice, i));
                 _this.indexInSlice = i + 1;
                 oncomplete(result);
