@@ -1,8 +1,16 @@
-declare class AssertHelper {
+﻿declare class AssertHelper {
     static assertParameter(...parameters: any[]): void;
     static assertNumber(...numbers: number[]): void;
     static assertArray(...arrays: number[][]): void;
     static assert(condition: boolean, message: string): void;
+}
+interface Math {
+    add(x: number, y: number): number;
+    subtract(x: number, y: number): number;
+    multiply(x: number, y: number): number;
+    divide(x: number, y: number): number;
+    substitute(x: number, y: number): number;
+    factorial(x: number): number;
 }
 declare class Matrix {
     static isZeroBased: boolean;
@@ -52,13 +60,16 @@ declare class Matrix {
     public matrixMultiply(input: Matrix): Matrix;
     public transpose(): Matrix;
 }
-interface Math {
-    add(x: number, y: number): number;
-    subtract(x: number, y: number): number;
-    multiply(x: number, y: number): number;
-    divide(x: number, y: number): number;
-    substitute(x: number, y: number): number;
-    factorial(x: number): number;
+declare class BlobStream {
+    private blob;
+    private indexInSlice;
+    private slice;
+    private sliceIndex;
+    private sliceSize;
+    private left;
+    constructor(blob: Blob);
+    private readNextSlice(onload);
+    public readLine(oncomplete: (result: string) => any): void;
 }
 interface Number {
 }

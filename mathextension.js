@@ -1,4 +1,4 @@
-var AssertHelper = (function () {
+﻿var AssertHelper = (function () {
     function AssertHelper() {
     }
     AssertHelper.assertParameter = function () {
@@ -38,6 +38,32 @@ var AssertHelper = (function () {
     };
     return AssertHelper;
 })();
+Math.add = function (x, y) {
+    return x + y;
+};
+
+Math.subtract = function (x, y) {
+    return x - y;
+};
+
+Math.multiply = function (x, y) {
+    return x * y;
+};
+
+Math.divide = function (x, y) {
+    return x / y;
+};
+
+Math.substitute = function (x, y) {
+    return y;
+};
+
+Math.factorial = function (x) {
+    var result = 1;
+    for (var i = 1; i <= x; i++)
+        result *= i;
+    return result;
+};
 var Matrix = (function () {
     function Matrix(columnLength, items) {
         this._array = [];
@@ -466,30 +492,75 @@ var Matrix = (function () {
     Matrix.isZeroBased = false;
     return Matrix;
 })();
-Math.add = function (x, y) {
-    return x + y;
-};
+//interface FileReader {
+//    readAsMatrix(blob: Blob): void;
+//}
+//if (!FileReader.prototype.readAsMatrix) {
+//    FileReader.prototype.readAsMatrix = (blob: Blob) => {
+//        var matrix = new Matrix();
+//        var reader = new FileReader();
+//        //(<FileReader>this).dispatchEvent();
+//    };
+//}
+var BlobStream = (function () {
+    function BlobStream(blob) {
+        this.blob = blob;
+        this.indexInSlice = 0;
+        this.sliceSize = 10240;
+        this.left = blob.size;
+    }
+    //read(length = this.blob.size) {
+    //}
+    BlobStream.prototype.readNextSlice = function (onload) {
+        var _this = this;
+        if (this.sliceIndex === undefined)
+            this.sliceIndex = 0;
+        else
+            this.sliceIndex++;
+        var start = this.sliceIndex * this.sliceSize;
+        if (this.left == 0)
+            throw new Error("No left input stream");
+        else {
+            var reader = new FileReader();
+            reader.onload = function (ev) {
+                _this.slice = ev.target.result;
+                _this.left -= blobSlice.size;
+                _this.indexInSlice = 0;
+            };
+            var blobSlice;
+            if (this.left < this.sliceSize)
+                blobSlice = this.blob.slice(start, start + this.left);
+            else
+                blobSlice = this.blob.slice(start, start + this.sliceSize);
+            reader.readAsArrayBuffer(blobSlice);
+        }
+    };
 
-Math.subtract = function (x, y) {
-    return x - y;
-};
-
-Math.multiply = function (x, y) {
-    return x * y;
-};
-
-Math.divide = function (x, y) {
-    return x / y;
-};
-
-Math.substitute = function (x, y) {
-    return y;
-};
-
-Math.factorial = function (x) {
-    var result = 1;
-    for (var i = 1; i <= x; i++)
-        result *= i;
-    return result;
-};
+    BlobStream.prototype.readLine = function (oncomplete) {
+        var _this = this;
+        var result = '';
+        var view = new Uint8Array(this.slice);
+        var i;
+        var asyncFunction = function () {
+            for (i = _this.indexInSlice; i < _this.slice.byteLength; i++) {
+                if (view[i] === 0x0A)
+                    break;
+            }
+            if (view[i] !== 0x0A) {
+                result += String.fromCharCode.apply(null, view.subarray(_this.indexInSlice));
+                _this.readNextSlice(function () {
+                    i = 0;
+                    window.setImmediate(asyncFunction);
+                });
+            } else if (_this.left == 0)
+                oncomplete(null);
+            else {
+                result += String.fromCharCode.apply(null, view.subarray(_this.indexInSlice, i));
+                _this.indexInSlice = i + 1;
+                oncomplete(result);
+            }
+        };
+    };
+    return BlobStream;
+})();
 //# sourceMappingURL=mathextension.js.map
