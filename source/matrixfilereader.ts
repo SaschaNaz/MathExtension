@@ -71,6 +71,7 @@ class BlobStream {
                 this.indexInSlice = i + 1;
                 oncomplete(result);
             }
-        }
+        };
+        asyncFunction();
     }
 }

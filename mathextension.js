@@ -561,6 +561,7 @@ var BlobStream = (function () {
                 oncomplete(result);
             }
         };
+        asyncFunction();
     };
     return BlobStream;
 })();
