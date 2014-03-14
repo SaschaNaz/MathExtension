@@ -24,7 +24,7 @@ class BlobStream {
 
     //}
 
-    private readNextSlice(onload: () => any) {
+    private readNextSlice(oncomplete: () => any) {
         if (this.sliceIndex === undefined)
             this.sliceIndex = 0;
         else
@@ -38,6 +38,7 @@ class BlobStream {
                 this.slice = <ArrayBuffer>(<FileReader>ev.target).result;
                 this.left -= blobSlice.size;
                 this.indexInSlice = 0;
+                oncomplete();
             };
             var blobSlice: Blob;
             if (this.left < this.sliceSize)

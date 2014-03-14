@@ -512,7 +512,7 @@ var BlobStream = (function () {
     }
     //read(length = this.blob.size) {
     //}
-    BlobStream.prototype.readNextSlice = function (onload) {
+    BlobStream.prototype.readNextSlice = function (oncomplete) {
         var _this = this;
         if (this.sliceIndex === undefined)
             this.sliceIndex = 0;
@@ -527,6 +527,7 @@ var BlobStream = (function () {
                 _this.slice = ev.target.result;
                 _this.left -= blobSlice.size;
                 _this.indexInSlice = 0;
+                oncomplete();
             };
             var blobSlice;
             if (this.left < this.sliceSize)
