@@ -15,7 +15,7 @@ class BlobStream {
     private slice = new ArrayBuffer(0);
     private sliceIndex: number;
     private sliceSize = 10240;//10 MiB, the size of the resulting slice
-    private left: number;
+    left: number;
     constructor(private blob: Blob) {
         this.left = blob.size;
     }

@@ -66,7 +66,7 @@ declare class BlobStream {
     private slice;
     private sliceIndex;
     private sliceSize;
-    private left;
+    public left: number;
     constructor(blob: Blob);
     private readNextSlice(oncomplete);
     public readLine(oncomplete: (result: string) => any): void;
