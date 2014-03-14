@@ -552,6 +552,7 @@ var BlobStream = (function () {
                 result += String.fromCharCode.apply(null, view.subarray(_this.indexInSlice));
                 _this.readNextSlice(function () {
                     i = 0;
+                    view = new Uint8Array(_this.slice);
                     window.setImmediate(asyncFunction);
                 });
             } else if (_this.left == 0)

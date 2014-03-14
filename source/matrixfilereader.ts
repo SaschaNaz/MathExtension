@@ -62,6 +62,7 @@ class BlobStream {
                 result += String.fromCharCode.apply(null, view.subarray(this.indexInSlice));
                 this.readNextSlice(() => {
                     i = 0;
+                    view = new Uint8Array(this.slice);
                     window.setImmediate(asyncFunction);
                 });
             }
