@@ -53,7 +53,7 @@ class BlobStream {
         var result = '';
         var view = new Uint8Array(this.slice);
         var asyncFunction = () => {
-            var i = Array.prototype.indexOf.call(this.slice, 0x0A);
+            var i = Array.prototype.indexOf.call(view, 0x0A);
             if (i == -1) {
                 if (this.left) {
                     result += String.fromCharCode.apply(null, view.subarray(this.indexInSlice));

@@ -543,7 +543,7 @@ var BlobStream = (function () {
         var result = '';
         var view = new Uint8Array(this.slice);
         var asyncFunction = function () {
-            var i = Array.prototype.indexOf.call(_this.slice, 0x0A);
+            var i = Array.prototype.indexOf.call(view, 0x0A);
             if (i == -1) {
                 if (_this.left) {
                     result += String.fromCharCode.apply(null, view.subarray(_this.indexInSlice));
