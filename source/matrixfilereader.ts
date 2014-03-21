@@ -16,7 +16,7 @@ class BlobStream {
     private sliceIndex: number;
     private sliceSize = 10240;//10 MiB, the size of the resulting slice
     left: number;
-    constructor(private blob: Blob) {
+    constructor(public blob: Blob) {
         this.left = blob.size;
     }
 
@@ -76,14 +76,13 @@ class BlobStream {
     }
 }
 
-class Matrix2DStream {
-    get left() { return this.stream.left }
-
-    constructor(private stream: BlobStream, public dimension = -1) {
+class Matrix2DStream extends BlobStream {
+    constructor(blob: Blob, public dimension = -1) {
+        super(blob);
     }
 
     readRow(delimiter: string, oncomplete: (row: number[]) => any) {
-        this.stream.readLine(function (line: string) {
+        super.readLine((line: string) => {
             var splitted = line.split(delimiter)
                 .map(function (s) { return parseFloat(s); });
             var valid = splitted.every(function (s) { return !isNaN(s) });

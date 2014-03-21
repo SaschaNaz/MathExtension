@@ -495,6 +495,12 @@ Math.factorial = function (x) {
 //interface FileReader {
 //    readAsMatrix(blob: Blob): void;
 //}
+var __extends = this.__extends || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    __.prototype = b.prototype;
+    d.prototype = new __();
+};
 //if (!FileReader.prototype.readAsMatrix) {
 //    FileReader.prototype.readAsMatrix = (blob: Blob) => {
 //        var matrix = new Matrix();
@@ -565,22 +571,16 @@ var BlobStream = (function () {
     return BlobStream;
 })();
 
-var Matrix2DStream = (function () {
-    function Matrix2DStream(stream, dimension) {
+var Matrix2DStream = (function (_super) {
+    __extends(Matrix2DStream, _super);
+    function Matrix2DStream(blob, dimension) {
         if (typeof dimension === "undefined") { dimension = -1; }
-        this.stream = stream;
+        _super.call(this, blob);
         this.dimension = dimension;
     }
-    Object.defineProperty(Matrix2DStream.prototype, "left", {
-        get: function () {
-            return this.stream.left;
-        },
-        enumerable: true,
-        configurable: true
-    });
-
     Matrix2DStream.prototype.readRow = function (delimiter, oncomplete) {
-        this.stream.readLine(function (line) {
+        var _this = this;
+        _super.prototype.readLine.call(this, function (line) {
             var splitted = line.split(delimiter).map(function (s) {
                 return parseFloat(s);
             });
@@ -588,8 +588,8 @@ var Matrix2DStream = (function () {
                 return !isNaN(s);
             });
             if (valid) {
-                if (this.dimension == -1 || splitted.length == this.dimension) {
-                    this.dimension = splitted.length;
+                if (_this.dimension == -1 || splitted.length == _this.dimension) {
+                    _this.dimension = splitted.length;
                     oncomplete(splitted);
                 } else
                     throw new Error("???");
@@ -597,5 +597,5 @@ var Matrix2DStream = (function () {
         });
     };
     return Matrix2DStream;
-})();
+})(BlobStream);
 //# sourceMappingURL=mathextension.js.map

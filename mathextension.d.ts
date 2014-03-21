@@ -61,7 +61,7 @@ interface Math {
     factorial(x: number): number;
 }
 declare class BlobStream {
-    private blob;
+    public blob: Blob;
     private indexInSlice;
     private slice;
     private sliceIndex;
@@ -71,11 +71,9 @@ declare class BlobStream {
     private readNextSlice(oncomplete);
     public readLine(oncomplete: (result: string) => any): void;
 }
-declare class Matrix2DStream {
-    private stream;
+declare class Matrix2DStream extends BlobStream {
     public dimension: number;
-    public left : number;
-    constructor(stream: BlobStream, dimension?: number);
+    constructor(blob: Blob, dimension?: number);
     public readRow(delimiter: string, oncomplete: (row: number[]) => any): void;
 }
 interface Number {
