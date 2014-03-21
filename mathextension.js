@@ -38,32 +38,6 @@
     };
     return AssertHelper;
 })();
-Math.add = function (x, y) {
-    return x + y;
-};
-
-Math.subtract = function (x, y) {
-    return x - y;
-};
-
-Math.multiply = function (x, y) {
-    return x * y;
-};
-
-Math.divide = function (x, y) {
-    return x / y;
-};
-
-Math.substitute = function (x, y) {
-    return y;
-};
-
-Math.factorial = function (x) {
-    var result = 1;
-    for (var i = 1; i <= x; i++)
-        result *= i;
-    return result;
-};
 var Matrix = (function () {
     function Matrix(columnLength, items) {
         this._array = [];
@@ -492,6 +466,32 @@ var Matrix = (function () {
     Matrix.isZeroBased = false;
     return Matrix;
 })();
+Math.add = function (x, y) {
+    return x + y;
+};
+
+Math.subtract = function (x, y) {
+    return x - y;
+};
+
+Math.multiply = function (x, y) {
+    return x * y;
+};
+
+Math.divide = function (x, y) {
+    return x / y;
+};
+
+Math.substitute = function (x, y) {
+    return y;
+};
+
+Math.factorial = function (x) {
+    var result = 1;
+    for (var i = 1; i <= x; i++)
+        result *= i;
+    return result;
+};
 //interface FileReader {
 //    readAsMatrix(blob: Blob): void;
 //}
@@ -563,5 +563,39 @@ var BlobStream = (function () {
         asyncFunction();
     };
     return BlobStream;
+})();
+
+var Matrix2DStream = (function () {
+    function Matrix2DStream(stream, dimension) {
+        if (typeof dimension === "undefined") { dimension = -1; }
+        this.stream = stream;
+        this.dimension = dimension;
+    }
+    Object.defineProperty(Matrix2DStream.prototype, "left", {
+        get: function () {
+            return this.stream.left;
+        },
+        enumerable: true,
+        configurable: true
+    });
+
+    Matrix2DStream.prototype.readRow = function (delimiter, oncomplete) {
+        this.stream.readLine(function (line) {
+            var splitted = line.split(delimiter).map(function (s) {
+                return parseFloat(s);
+            });
+            var valid = splitted.every(function (s) {
+                return !isNaN(s);
+            });
+            if (valid) {
+                if (this.dimension == -1 || splitted.length == this.dimension) {
+                    this.dimension = splitted.length;
+                    oncomplete(splitted);
+                } else
+                    throw new Error("???");
+            }
+        });
+    };
+    return Matrix2DStream;
 })();
 //# sourceMappingURL=mathextension.js.map

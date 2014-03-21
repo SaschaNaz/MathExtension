@@ -75,3 +75,26 @@ class BlobStream {
         asyncFunction();
     }
 }
+
+class Matrix2DStream {
+    get left() { return this.stream.left }
+
+    constructor(private stream: BlobStream, public dimension = -1) {
+    }
+
+    readRow(delimiter: string, oncomplete: (row: number[]) => any) {
+        this.stream.readLine(function (line: string) {
+            var splitted = line.split(delimiter)
+                .map(function (s) { return parseFloat(s); });
+            var valid = splitted.every(function (s) { return !isNaN(s) });
+            if (valid) {
+                if (this.dimension == -1 || splitted.length == this.dimension) {
+                    this.dimension = splitted.length;
+                    oncomplete(splitted);
+                }
+                else
+                    throw new Error("???");
+            }
+        });
+    }
+}
