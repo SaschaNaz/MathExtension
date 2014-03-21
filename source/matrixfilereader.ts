@@ -74,6 +74,17 @@ class BlobStream {
         };
         asyncFunction();
     }
+
+    readLines(oneach: (result: string) => any) {
+        var asyncFunction = () => {
+            this.readLine((result) => {
+                window.setImmediate(oneach, result);
+                if (this.left > 0)
+                    window.setImmediate(asyncFunction);
+            })
+        };
+        asyncFunction();
+    }
 }
 
 class Matrix2DStream extends BlobStream {
@@ -99,6 +110,17 @@ class Matrix2DStream extends BlobStream {
                     window.setImmediate(asyncFunction);
             });
         }
+        asyncFunction();
+    }
+
+    readRows(delimiter: string, oneach: (row: number[]) => any) {
+        var asyncFunction = () => {
+            this.readRow(delimiter, (row) => {
+                window.setImmediate(oneach, row);
+                if (this.left > 0)
+                    window.setImmediate(asyncFunction);
+            })
+        };
         asyncFunction();
     }
 }
