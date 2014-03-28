@@ -38,6 +38,32 @@
     };
     return AssertHelper;
 })();
+Math.add = function (x, y) {
+    return x + y;
+};
+
+Math.subtract = function (x, y) {
+    return x - y;
+};
+
+Math.multiply = function (x, y) {
+    return x * y;
+};
+
+Math.divide = function (x, y) {
+    return x / y;
+};
+
+Math.substitute = function (x, y) {
+    return y;
+};
+
+Math.factorial = function (x) {
+    var result = 1;
+    for (var i = 1; i <= x; i++)
+        result *= i;
+    return result;
+};
 var Matrix = (function () {
     function Matrix(columnLength, items) {
         this._array = [];
@@ -466,32 +492,6 @@ var Matrix = (function () {
     Matrix.isZeroBased = false;
     return Matrix;
 })();
-Math.add = function (x, y) {
-    return x + y;
-};
-
-Math.subtract = function (x, y) {
-    return x - y;
-};
-
-Math.multiply = function (x, y) {
-    return x * y;
-};
-
-Math.divide = function (x, y) {
-    return x / y;
-};
-
-Math.substitute = function (x, y) {
-    return y;
-};
-
-Math.factorial = function (x) {
-    var result = 1;
-    for (var i = 1; i <= x; i++)
-        result *= i;
-    return result;
-};
 //interface FileReader {
 //    readAsMatrix(blob: Blob): void;
 //}
@@ -569,13 +569,15 @@ var BlobStream = (function () {
         asyncFunction();
     };
 
-    BlobStream.prototype.readLines = function (oneach) {
+    BlobStream.prototype.readLines = function (oneach, oncomplete) {
         var _this = this;
         var asyncFunction = function () {
             _this.readLine(function (result) {
                 window.setImmediate(oneach, result);
                 if (_this.left > 0)
                     window.setImmediate(asyncFunction);
+                else
+                    window.setImmediate(oncomplete);
             });
         };
         asyncFunction();
@@ -613,13 +615,15 @@ var Matrix2DStream = (function (_super) {
         asyncFunction();
     };
 
-    Matrix2DStream.prototype.readRows = function (delimiter, oneach) {
+    Matrix2DStream.prototype.readRows = function (delimiter, oneach, oncomplete) {
         var _this = this;
         var asyncFunction = function () {
             _this.readRow(delimiter, function (row) {
                 window.setImmediate(oneach, row);
                 if (_this.left > 0)
                     window.setImmediate(asyncFunction);
+                else
+                    window.setImmediate(oncomplete);
             });
         };
         asyncFunction();

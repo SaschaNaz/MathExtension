@@ -75,12 +75,14 @@ class BlobStream {
         asyncFunction();
     }
 
-    readLines(oneach: (result: string) => any) {
+    readLines(oneach: (result: string) => any, oncomplete: () => any) {
         var asyncFunction = () => {
             this.readLine((result) => {
                 window.setImmediate(oneach, result);
                 if (this.left > 0)
                     window.setImmediate(asyncFunction);
+                else
+                    window.setImmediate(oncomplete);
             })
         };
         asyncFunction();
@@ -113,12 +115,14 @@ class Matrix2DStream extends BlobStream {
         asyncFunction();
     }
 
-    readRows(delimiter: string, oneach: (row: number[]) => any) {
+    readRows(delimiter: string, oneach: (row: number[]) => any, oncomplete: () => any) {
         var asyncFunction = () => {
             this.readRow(delimiter, (row) => {
                 window.setImmediate(oneach, row);
                 if (this.left > 0)
                     window.setImmediate(asyncFunction);
+                else
+                    window.setImmediate(oncomplete);
             })
         };
         asyncFunction();
