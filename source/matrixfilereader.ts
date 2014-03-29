@@ -81,7 +81,7 @@ class BlobStream {
                 window.setImmediate(oneach, result);
                 if (this.left > 0)
                     window.setImmediate(asyncFunction);
-                else
+                else if (oncomplete)
                     window.setImmediate(oncomplete);
             })
         };
@@ -121,7 +121,7 @@ class Matrix2DStream extends BlobStream {
                 window.setImmediate(oneach, row);
                 if (this.left > 0)
                     window.setImmediate(asyncFunction);
-                else
+                else if (oncomplete)
                     window.setImmediate(oncomplete);
             })
         };
