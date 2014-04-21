@@ -1,4 +1,4 @@
-class Matrix {
+class Matrix<T> {
     static isZeroBased = false;
     static isMatrix(object: any) {
         //http://stackoverflow.com/questions/332422/how-do-i-get-the-name-of-an-objects-type-in-javascript
@@ -65,8 +65,8 @@ class Matrix {
     }
 
     constructor();
-    constructor(columnLength: number, items: number[])
-    constructor(columnLength?: number, items?: number[]) {
+    constructor(columnLength: number, items: T[])
+    constructor(columnLength?: number, items?: T[]) {
         if (columnLength === undefined)
             return; // please do nothing, return an empty matrix
 
@@ -144,14 +144,14 @@ class Matrix {
             return undefined;
     }
 
-    setFor(index: number, input: number): Matrix;
-    setFor(coordinate: number[], input: number): Matrix;
-    setFor(coordinate: any, input: number) {
+    setFor(index: number, input: T): Matrix<T>;
+    setFor(coordinate: number[], input: T): Matrix<T>;
+    setFor(coordinate: any, input: T) {
         AssertHelper.assertParameter(coordinate);
         var internalCoordinate = this._getInternalCoordinate(coordinate);
 
         if (!this._checkInternalCoordinateValidity(internalCoordinate)) {
-            this.expandSize(internalCoordinate.map((i: number) => { return i + 1 }) , 0);
+            this.expandSize(internalCoordinate.map((i: number) => { return i + 1 }), null);
         }
 
         var dimensioner = (<number[]>internalCoordinate).slice(0);
@@ -163,7 +163,7 @@ class Matrix {
         return this;
     }
 
-    private static _expandArray(array: any[], targetSize: number[], fill: number) {
+    private static _expandArray<T2>(array: any[], targetSize: number[], fill: T2) {
         var childSize = targetSize.slice(0);
         childSize.shift();
 
@@ -185,7 +185,7 @@ class Matrix {
     }
 
     //should be more efficient
-    expandSize(targetSize: number[], fill = 0) {
+    expandSize(targetSize: number[], fill?: T) {
         var size = this.size;
         AssertHelper.assertArray(targetSize);
         AssertHelper.assert(targetSize.length >= size.length, "Target dimension should be larger than or equal with original dimension");
@@ -211,7 +211,7 @@ class Matrix {
     }
 
     clone() {
-        var items: number[] = [];
+        var items: T[] = [];
         this.forEach((item) => {
             items.push(item);
         });
@@ -219,7 +219,7 @@ class Matrix {
     }
 
     map(func: Function, input?: any, ...argArray: any[]) {
-        return <Matrix>this.mapFor.apply(this, [func, null, input].concat(argArray));
+        return <Matrix<T>>this.mapFor.apply(this, [func, null, input].concat(argArray));
     }
 
     mapFor(func: Function, condition: (item: number, coordinate: number[]) => void, input?: any, ...argArray: any[]) {
@@ -234,16 +234,16 @@ class Matrix {
                 if (input == null)
                     newMatrix.setFor(coordinate, func.apply(null, [item]));
                 else
-                    newMatrix.setFor(coordinate, func.apply(null, [item, input.isMatrix ? (<Matrix>input).getFor(coordinate) : input].concat(argArray)));
+                    newMatrix.setFor(coordinate, func.apply(null, [item, input.isMatrix ? (<Matrix<T>>input).getFor(coordinate) : input].concat(argArray)));
             }
         });
 
         return newMatrix;
     }
 
-    private static _forEach(array: any[], func: (item: number, coordinate: number[]) => void, parentCoordinate: number[], depth: number) {
+    private static _forEach<T2>(array: any[], func: (item: T2, coordinate: number[]) => void, parentCoordinate: number[], depth: number) {
         if (depth == 1) {
-            (<number[]>array).forEach((item, index) => {
+            (<T2[]>array).forEach((item, index) => {
                 func(item, parentCoordinate.concat(Matrix._getUserFriendlyIndex(index)));
             });
         }
@@ -255,7 +255,7 @@ class Matrix {
         }
     }
 
-    forEach(func: (item: number, coordinate: number[]) => void) {
+    forEach(func: (item: T, coordinate: number[]) => void) {
         //var stack = [this._array];
         //var indexes = [0];
 
@@ -364,43 +364,43 @@ class Matrix {
         return newMatrix;
     }
 
-    plus(input: number): Matrix;
-    plus(input: Matrix): Matrix;
+    plus(input: T): Matrix<T>;
+    plus(input: Matrix<T>): Matrix<T>;
     plus(input: any) {
         return this.map(Math.add, input);
     }
 
-    minus(input: number): Matrix;
-    minus(input: Matrix): Matrix;
+    minus(input: T): Matrix<T>;
+    minus(input: Matrix<T>): Matrix<T>;
     minus(input: any) {
         return this.map(Math.subtract, input);
     }
 
-    times(input: number): Matrix;
-    times(input: Matrix): Matrix;
+    times(input: T): Matrix<T>;
+    times(input: Matrix<T>): Matrix<T>;
     times(input: any) {
         return this.map(Math.multiply, input);
     }
 
-    dividedBy(input: number): Matrix;
-    dividedBy(input: Matrix): Matrix;
+    dividedBy(input: T): Matrix<T>;
+    dividedBy(input: Matrix<T>): Matrix<T>;
     dividedBy(input: any) {
         return this.map(Math.divide, input);
     }
 
-    powerOf(input: number): Matrix;
-    powerOf(input: Matrix): Matrix;
+    powerOf(input: T): Matrix<T>;
+    powerOf(input: Matrix<T>): Matrix<T>;
     powerOf(input: any) {
         return this.map(Math.pow, input);
     }
 
-    replace(input: number): Matrix;
-    replace(input: Matrix): Matrix;
+    replace(input: T): Matrix<T>;
+    replace(input: Matrix<T>): Matrix<T>;
     replace(input: any) {
         return this.map(Math.substitute, input);
     }
 
-    matrixMultiply(input: Matrix) {
+    matrixMultiply(input: Matrix<T>) {
         AssertHelper.assert(this.columnLength == input.rowLength,
             "Row length of the input matrix should be same with column length of the original one.");
         var newColumnLength = input.columnLength;

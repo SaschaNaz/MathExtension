@@ -200,7 +200,7 @@ var Matrix = (function () {
         if (!this._checkInternalCoordinateValidity(internalCoordinate)) {
             this.expandSize(internalCoordinate.map(function (i) {
                 return i + 1;
-            }), 0);
+            }), null);
         }
 
         var dimensioner = internalCoordinate.slice(0);
@@ -234,7 +234,6 @@ var Matrix = (function () {
 
     //should be more efficient
     Matrix.prototype.expandSize = function (targetSize, fill) {
-        if (typeof fill === "undefined") { fill = 0; }
         var size = this.size;
         AssertHelper.assertArray(targetSize);
         AssertHelper.assert(targetSize.length >= size.length, "Target dimension should be larger than or equal with original dimension");

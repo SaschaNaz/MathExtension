@@ -12,7 +12,7 @@ class AssertHelper {
         });
     }
 
-    static assertArray(...arrays: number[][]) {
+    static assertArray(...arrays: any[][]) {
         arrays.forEach((array) => {
             AssertHelper.assert(Array.isArray(array), "Invalid argument.");
         });

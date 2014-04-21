@@ -1,10 +1,10 @@
 declare class AssertHelper {
     static assertParameter(...parameters: any[]): void;
     static assertNumber(...numbers: number[]): void;
-    static assertArray(...arrays: number[][]): void;
+    static assertArray(...arrays: any[][]): void;
     static assert(condition: boolean, message: string): void;
 }
-declare class Matrix {
+declare class Matrix<T> {
     static isZeroBased: boolean;
     static isMatrix(object: any): boolean;
     private static _getZeroBasedIndex(i);
@@ -17,40 +17,40 @@ declare class Matrix {
     public dimension : number;
     private _checkInternalCoordinateValidity(coordinate);
     constructor();
-    constructor(columnLength: number, items: number[]);
+    constructor(columnLength: number, items: T[]);
     private _getInternalCoordinateFromIndex(index);
     private _getInternalCoordinate(index);
     public getFor(index: number): number;
     public getFor(coordinate: number[]): number;
-    public setFor(index: number, input: number): Matrix;
-    public setFor(coordinate: number[], input: number): Matrix;
-    private static _expandArray(array, targetSize, fill);
-    public expandSize(targetSize: number[], fill?: number): void;
-    public clone(): Matrix;
-    public map(func: Function, input?: any, ...argArray: any[]): Matrix;
-    public mapFor(func: Function, condition: (item: number, coordinate: number[]) => void, input?: any, ...argArray: any[]): Matrix;
-    private static _forEach(array, func, parentCoordinate, depth);
-    public forEach(func: (item: number, coordinate: number[]) => void): void;
+    public setFor(index: number, input: T): Matrix<T>;
+    public setFor(coordinate: number[], input: T): Matrix<T>;
+    private static _expandArray<T2>(array, targetSize, fill);
+    public expandSize(targetSize: number[], fill?: T): void;
+    public clone(): Matrix<any>;
+    public map(func: Function, input?: any, ...argArray: any[]): Matrix<T>;
+    public mapFor(func: Function, condition: (item: number, coordinate: number[]) => void, input?: any, ...argArray: any[]): Matrix<any>;
+    private static _forEach<T2>(array, func, parentCoordinate, depth);
+    public forEach(func: (item: T, coordinate: number[]) => void): void;
     public toString(): string;
     public toMatlabString(): string;
-    static getZeroMatrix(coordinate: number[]): Matrix;
-    static getIdentityMatrix(size: number): Matrix;
-    static getLinearSpace(start: number, end: number, pointNumber: number): Matrix;
-    static getGapSpace(start: number, end: number, gap?: number): Matrix;
-    public plus(input: number): Matrix;
-    public plus(input: Matrix): Matrix;
-    public minus(input: number): Matrix;
-    public minus(input: Matrix): Matrix;
-    public times(input: number): Matrix;
-    public times(input: Matrix): Matrix;
-    public dividedBy(input: number): Matrix;
-    public dividedBy(input: Matrix): Matrix;
-    public powerOf(input: number): Matrix;
-    public powerOf(input: Matrix): Matrix;
-    public replace(input: number): Matrix;
-    public replace(input: Matrix): Matrix;
-    public matrixMultiply(input: Matrix): Matrix;
-    public transpose(): Matrix;
+    static getZeroMatrix(coordinate: number[]): Matrix<{}>;
+    static getIdentityMatrix(size: number): Matrix<{}>;
+    static getLinearSpace(start: number, end: number, pointNumber: number): Matrix<{}>;
+    static getGapSpace(start: number, end: number, gap?: number): Matrix<{}>;
+    public plus(input: T): Matrix<T>;
+    public plus(input: Matrix<T>): Matrix<T>;
+    public minus(input: T): Matrix<T>;
+    public minus(input: Matrix<T>): Matrix<T>;
+    public times(input: T): Matrix<T>;
+    public times(input: Matrix<T>): Matrix<T>;
+    public dividedBy(input: T): Matrix<T>;
+    public dividedBy(input: Matrix<T>): Matrix<T>;
+    public powerOf(input: T): Matrix<T>;
+    public powerOf(input: Matrix<T>): Matrix<T>;
+    public replace(input: T): Matrix<T>;
+    public replace(input: Matrix<T>): Matrix<T>;
+    public matrixMultiply(input: Matrix<T>): Matrix<number>;
+    public transpose(): Matrix<{}>;
 }
 interface Math {
     add(x: number, y: number): number;
