@@ -1,8 +1,16 @@
-declare class AssertHelper {
+﻿declare class AssertHelper {
     static assertParameter(...parameters: any[]): void;
     static assertNumber(...numbers: number[]): void;
     static assertArray(...arrays: any[][]): void;
     static assert(condition: boolean, message: string): void;
+}
+interface Math {
+    add(x: number, y: number): number;
+    subtract(x: number, y: number): number;
+    multiply(x: number, y: number): number;
+    divide(x: number, y: number): number;
+    substitute(x: number, y: number): number;
+    factorial(x: number): number;
 }
 declare class Matrix<T> {
     static isZeroBased: boolean;
@@ -15,7 +23,7 @@ declare class Matrix<T> {
     public size : number[];
     public serialSize : number;
     public dimension : number;
-    private _checkInternalCoordinateValidity(coordinate);
+    private _isValidInternalCoordinate(coordinate);
     constructor();
     constructor(size: number[], items?: T[]);
     private static _getArrayMatrix<T2>(size, itemChunk, subchunkSize);
@@ -26,7 +34,7 @@ declare class Matrix<T> {
     public setFor(index: number, input: T): Matrix<T>;
     public setFor(coordinate: number[], input: T): Matrix<T>;
     private static _expandArray<T2>(array, targetSize, fill);
-    public expandSize(targetSize: number[], fill?: T): void;
+    public expand(targetSize: number[], fill?: T): void;
     public clone(): Matrix<any>;
     static isSameSize(x: Matrix<any>, y: Matrix<any>): boolean;
     public map(func: Function, input?: any, ...argArray: any[]): Matrix<T>;
@@ -52,14 +60,6 @@ declare class Matrix<T> {
     public replace(input: Matrix<T>): Matrix<T>;
     public matrixMultiply(input: Matrix<T>): Matrix<number>;
     public transpose(): Matrix<{}>;
-}
-interface Math {
-    add(x: number, y: number): number;
-    subtract(x: number, y: number): number;
-    multiply(x: number, y: number): number;
-    divide(x: number, y: number): number;
-    substitute(x: number, y: number): number;
-    factorial(x: number): number;
 }
 declare class BlobStream {
     public blob: Blob;

@@ -54,11 +54,10 @@ class Matrix<T> {
         return this.size.length;
     }
 
-    private _checkInternalCoordinateValidity(coordinate: number[]) {
+    private _isValidInternalCoordinate(coordinate: number[]) {
         var size = this.size;
         AssertHelper.assertArray(coordinate);
-        AssertHelper.assert(coordinate.length == size.length, "Coordinate dimension is not valid for this matrix.");
-        var validity = true;
+        //AssertHelper.assert(coordinate.length == size.length, "Coordinate dimension is not valid for this matrix.");
         return coordinate.every((dimensionIndex, dimension) => {
             return dimensionIndex < size[dimension];
         });
@@ -173,7 +172,7 @@ class Matrix<T> {
         AssertHelper.assertParameter(coordinate);
         var internalCoordinate = this._getInternalCoordinate(coordinate);
 
-        if (this._checkInternalCoordinateValidity(internalCoordinate)) {
+        if (this._isValidInternalCoordinate(internalCoordinate)) {
             var dimensioner = (<number[]>internalCoordinate).slice(0);
             var targetArray = <any[]>this._array;
             while (dimensioner.length > 0) {
@@ -191,8 +190,8 @@ class Matrix<T> {
         AssertHelper.assertParameter(coordinate);
         var internalCoordinate = this._getInternalCoordinate(coordinate);
 
-        if (!this._checkInternalCoordinateValidity(internalCoordinate)) {
-            this.expandSize(internalCoordinate.map((i: number) => { return i + 1 }), undefined);
+        if (!this._isValidInternalCoordinate(internalCoordinate)) {
+            this.expand(internalCoordinate.map((i: number) => { return i + 1 }), undefined);
         }
 
         var dimensioner = (<number[]>internalCoordinate).slice(0);
@@ -225,7 +224,7 @@ class Matrix<T> {
     }
 
     //should be more efficient
-    expandSize(targetSize: number[], fill?: T) {
+    expand(targetSize: number[], fill?: T) {
         var size = this.size;
         AssertHelper.assertArray(targetSize);
         AssertHelper.assert(targetSize.length >= size.length, "Target dimension should be larger than or equal with original dimension");
@@ -373,7 +372,7 @@ class Matrix<T> {
     static getZeroMatrix(coordinate: number[]) {
         AssertHelper.assertArray(coordinate);
         var newMatrix = new Matrix();
-        newMatrix.expandSize(coordinate, 0);
+        newMatrix.expand(coordinate, 0);
         return newMatrix;
     }
 
@@ -389,7 +388,7 @@ class Matrix<T> {
         AssertHelper.assertNumber(start, end, pointNumber);
         AssertHelper.assert(end > start, "End should be larger than start.");
         var newMatrix = new Matrix();
-        newMatrix.expandSize([pointNumber]);
+        newMatrix.expand([pointNumber]);
         var gap = (end - start) / (pointNumber - 1);
         for (var i = 0; i < pointNumber; i++)
             newMatrix._array[i] = start + gap * i;
@@ -403,7 +402,7 @@ class Matrix<T> {
             gap = 1;
         var newMatrix = new Matrix();
         var length = Math.floor((end - start) / gap) + 1;
-        newMatrix.expandSize([length]);
+        newMatrix.expand([length]);
         for (var i = 0; i < length; i++)
             newMatrix._array[i] = start + gap * i;
         return newMatrix;

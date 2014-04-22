@@ -38,6 +38,32 @@
     };
     return AssertHelper;
 })();
+Math.add = function (x, y) {
+    return x + y;
+};
+
+Math.subtract = function (x, y) {
+    return x - y;
+};
+
+Math.multiply = function (x, y) {
+    return x * y;
+};
+
+Math.divide = function (x, y) {
+    return x / y;
+};
+
+Math.substitute = function (x, y) {
+    return y;
+};
+
+Math.factorial = function (x) {
+    var result = 1;
+    for (var i = 1; i <= x; i++)
+        result *= i;
+    return result;
+};
 var Matrix = (function () {
     function Matrix(size, items) {
         if (typeof items === "undefined") { items = []; }
@@ -142,11 +168,11 @@ var Matrix = (function () {
         configurable: true
     });
 
-    Matrix.prototype._checkInternalCoordinateValidity = function (coordinate) {
+    Matrix.prototype._isValidInternalCoordinate = function (coordinate) {
         var size = this.size;
         AssertHelper.assertArray(coordinate);
-        AssertHelper.assert(coordinate.length == size.length, "Coordinate dimension is not valid for this matrix.");
-        var validity = true;
+
+        //AssertHelper.assert(coordinate.length == size.length, "Coordinate dimension is not valid for this matrix.");
         return coordinate.every(function (dimensionIndex, dimension) {
             return dimensionIndex < size[dimension];
         });
@@ -219,7 +245,7 @@ var Matrix = (function () {
         AssertHelper.assertParameter(coordinate);
         var internalCoordinate = this._getInternalCoordinate(coordinate);
 
-        if (this._checkInternalCoordinateValidity(internalCoordinate)) {
+        if (this._isValidInternalCoordinate(internalCoordinate)) {
             var dimensioner = internalCoordinate.slice(0);
             var targetArray = this._array;
             while (dimensioner.length > 0) {
@@ -234,8 +260,8 @@ var Matrix = (function () {
         AssertHelper.assertParameter(coordinate);
         var internalCoordinate = this._getInternalCoordinate(coordinate);
 
-        if (!this._checkInternalCoordinateValidity(internalCoordinate)) {
-            this.expandSize(internalCoordinate.map(function (i) {
+        if (!this._isValidInternalCoordinate(internalCoordinate)) {
+            this.expand(internalCoordinate.map(function (i) {
                 return i + 1;
             }), undefined);
         }
@@ -269,7 +295,7 @@ var Matrix = (function () {
     };
 
     //should be more efficient
-    Matrix.prototype.expandSize = function (targetSize, fill) {
+    Matrix.prototype.expand = function (targetSize, fill) {
         var size = this.size;
         AssertHelper.assertArray(targetSize);
         AssertHelper.assert(targetSize.length >= size.length, "Target dimension should be larger than or equal with original dimension");
@@ -420,7 +446,7 @@ var Matrix = (function () {
     Matrix.getZeroMatrix = function (coordinate) {
         AssertHelper.assertArray(coordinate);
         var newMatrix = new Matrix();
-        newMatrix.expandSize(coordinate, 0);
+        newMatrix.expand(coordinate, 0);
         return newMatrix;
     };
 
@@ -436,7 +462,7 @@ var Matrix = (function () {
         AssertHelper.assertNumber(start, end, pointNumber);
         AssertHelper.assert(end > start, "End should be larger than start.");
         var newMatrix = new Matrix();
-        newMatrix.expandSize([pointNumber]);
+        newMatrix.expand([pointNumber]);
         var gap = (end - start) / (pointNumber - 1);
         for (var i = 0; i < pointNumber; i++)
             newMatrix._array[i] = start + gap * i;
@@ -450,7 +476,7 @@ var Matrix = (function () {
             gap = 1;
         var newMatrix = new Matrix();
         var length = Math.floor((end - start) / gap) + 1;
-        newMatrix.expandSize([length]);
+        newMatrix.expand([length]);
         for (var i = 0; i < length; i++)
             newMatrix._array[i] = start + gap * i;
         return newMatrix;
@@ -507,32 +533,6 @@ var Matrix = (function () {
     Matrix.isZeroBased = false;
     return Matrix;
 })();
-Math.add = function (x, y) {
-    return x + y;
-};
-
-Math.subtract = function (x, y) {
-    return x - y;
-};
-
-Math.multiply = function (x, y) {
-    return x * y;
-};
-
-Math.divide = function (x, y) {
-    return x / y;
-};
-
-Math.substitute = function (x, y) {
-    return y;
-};
-
-Math.factorial = function (x) {
-    var result = 1;
-    for (var i = 1; i <= x; i++)
-        result *= i;
-    return result;
-};
 //interface FileReader {
 //    readAsMatrix(blob: Blob): void;
 //}
