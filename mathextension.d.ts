@@ -29,8 +29,8 @@ declare class Matrix<T> {
     private static _getArrayMatrix<T2>(size, itemChunk, subchunkSize);
     private _getInternalCoordinateFromIndex(index);
     private _getInternalCoordinate(index);
-    public getFor(index: number): number;
-    public getFor(coordinate: number[]): number;
+    public getFor(index: number): T;
+    public getFor(coordinate: number[]): T;
     public setFor(index: number, input: T): Matrix<T>;
     public setFor(coordinate: number[], input: T): Matrix<T>;
     private static _expandArray<T2>(array, targetSize, fill);

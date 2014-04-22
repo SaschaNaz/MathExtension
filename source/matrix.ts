@@ -166,8 +166,8 @@ class Matrix<T> {
         return internalCoordinate;
     }
 
-    getFor(index: number): number;
-    getFor(coordinate: number[]): number;
+    getFor(index: number): T;
+    getFor(coordinate: number[]): T;
     getFor(coordinate: any) {
         AssertHelper.assertParameter(coordinate);
         var internalCoordinate = this._getInternalCoordinate(coordinate);
@@ -178,7 +178,7 @@ class Matrix<T> {
             while (dimensioner.length > 0) {
                 targetArray = targetArray[dimensioner.shift()];
             }
-            return <number><any>targetArray;
+            return <T><any>targetArray;
         }
         else
             return undefined;
