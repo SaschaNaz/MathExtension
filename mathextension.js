@@ -39,25 +39,35 @@
     return AssertHelper;
 })();
 var Matrix = (function () {
-    function Matrix(columnLength, items) {
-        this._array = [];
-        if (columnLength === undefined)
+    function Matrix(size, items) {
+        if (typeof items === "undefined") { items = []; }
+        if (!Array.isArray(size)) {
+            this._array = [];
             return;
-
-        AssertHelper.assertNumber(columnLength);
-        AssertHelper.assertArray(items);
-        if (columnLength == null)
-            columnLength = Number(items.length); // giving dynamic length
-
-        //columnLength is a number
-        AssertHelper.assert(columnLength >= 1, "Column length should be larger than or equal to 1.");
-        AssertHelper.assert(items.length % columnLength == 0, "Invalid number of items");
-
-        for (var row = 0; row < items.length / columnLength; row++) {
-            this._array.push([]);
-            for (var column = 0; column < columnLength; column++)
-                this._array[row][column] = items[row * columnLength + column];
         }
+
+        for (var i = 1; i < size.length; i++) {
+            if (isNaN(size[i]))
+                throw new Error("NaN is allowed only on the highest matrix dimension length.");
+        }
+
+        var subchunkSize = 1;
+        for (var i = 1; i < size.length; i++)
+            subchunkSize *= size[i];
+        if (isNaN(size[0])) {
+            size = size.slice(0);
+            size[0] = Math.ceil(items.length / subchunkSize);
+        }
+        this._array = Matrix._getArrayMatrix(size, items, subchunkSize);
+        ////columnLength is a number
+        //AssertHelper.assert(columnLength >= 1, "Column length should be larger than or equal to 1.");
+        //AssertHelper.assert(items.length % columnLength == 0, "Invalid number of items");
+        ////columnLength >= 1, items exist, items.length % columnLength == 0
+        //for (var row = 0; row < items.length / columnLength; row++) {
+        //    this._array.push([]);
+        //    for (var column = 0; column < columnLength; column++)
+        //        this._array[row][column] = items[row * columnLength + column];
+        //}
     }
     Matrix.isMatrix = function (object) {
         //http://stackoverflow.com/questions/332422/how-do-i-get-the-name-of-an-objects-type-in-javascript
@@ -142,6 +152,33 @@ var Matrix = (function () {
         });
     };
 
+    Matrix._getArrayMatrix = function (size, itemChunk, subchunkSize) {
+        //if (subchunkSize === undefined) {
+        //    subchunkSize = 1;
+        //    for (var i = 1; i < size.length; i++)
+        //        subchunkSize *= size[i];
+        //}
+        if (size.length > 1) {
+            var array = [];
+
+            var childSize = size.slice(1);
+            var nextSubchunkSize = subchunkSize / size[0];
+            for (var i = 0; i < size[0]; i++) {
+                var subchunk = itemChunk.slice(subchunkSize * i, subchunkSize * (i + 1));
+                array.push(this._getArrayMatrix(childSize, subchunk, nextSubchunkSize));
+            }
+            return array;
+        } else {
+            itemChunk = itemChunk.slice(0, size[0]);
+            if (itemChunk.length < size[0]) {
+                while (itemChunk.length != size[0])
+                    itemChunk.push(undefined);
+            }
+            return itemChunk;
+        }
+        //for (var i = 0; i < size
+    };
+
     Matrix.prototype._getInternalCoordinateFromIndex = function (index) {
         AssertHelper.assertNumber(index);
         index = Matrix._getZeroBasedIndex(index);
@@ -200,7 +237,7 @@ var Matrix = (function () {
         if (!this._checkInternalCoordinateValidity(internalCoordinate)) {
             this.expandSize(internalCoordinate.map(function (i) {
                 return i + 1;
-            }), null);
+            }), undefined);
         }
 
         var dimensioner = internalCoordinate.slice(0);
@@ -208,15 +245,14 @@ var Matrix = (function () {
         while (dimensioner.length > 1) {
             targetArray = targetArray[dimensioner.shift()];
         }
-        targetArray[dimensioner.shift()] = Number(input);
+        targetArray[dimensioner.shift()] = input;
         return this;
     };
 
     Matrix._expandArray = function (array, targetSize, fill) {
-        var childSize = targetSize.slice(0);
-        childSize.shift();
-
         if (targetSize.length > 1) {
+            var childSize = targetSize.slice(1);
+
             for (var i = 0; i < array.length; i++) {
                 this._expandArray(array[i], childSize, fill);
             }
@@ -263,7 +299,17 @@ var Matrix = (function () {
         this.forEach(function (item) {
             items.push(item);
         });
-        return new Matrix(this.columnLength, items);
+        return new Matrix(this.size, items);
+    };
+
+    Matrix.isSameSize = function (x, y) {
+        var xsize = x.size;
+        var ysize = y.size;
+        for (var i = 0; i < xsize.length; i++) {
+            if (xsize[i] != ysize[i])
+                return false;
+        }
+        return true;
     };
 
     Matrix.prototype.map = function (func, input) {
@@ -279,8 +325,8 @@ var Matrix = (function () {
         for (var _i = 0; _i < (arguments.length - 3); _i++) {
             argArray[_i] = arguments[_i + 3];
         }
-        if (input != null && input.isMatrix)
-            AssertHelper.assert(this.columnLength == input.columnLength && this.rowLength == input.rowLength, "Dimensions should match each other");
+        if (input != null && Matrix.isMatrix(input))
+            AssertHelper.assert(Matrix.isSameSize(this, input), "Dimensions should match each other");
 
         var newMatrix = this.clone();
         newMatrix.forEach(function (item, coordinate) {
@@ -288,7 +334,7 @@ var Matrix = (function () {
                 if (input == null)
                     newMatrix.setFor(coordinate, func.apply(null, [item]));
                 else
-                    newMatrix.setFor(coordinate, func.apply(null, [item, input.isMatrix ? input.getFor(coordinate) : input].concat(argArray)));
+                    newMatrix.setFor(coordinate, func.apply(null, [item, Matrix.isMatrix(input) ? input.getFor(coordinate) : input].concat(argArray)));
             }
         });
 
@@ -358,23 +404,19 @@ var Matrix = (function () {
             }
         }
 
-        if (outputArray.length > 0)
-            return outputArray.join(' ');
-        else
-            return "(Empty matrix)";
+        return outputArray.join(' ');
     };
 
-    Matrix.prototype.toMatlabString = function () {
-        var outputArray = [];
-        for (var row = 0; row < this.rowLength; row++) {
-            var strArray = [];
-            for (var column = 0; column < this.columnLength; column++)
-                strArray.push(this._array[row][column]);
-            outputArray.push(strArray.join(' '));
-        }
-        return '[' + outputArray.join('; ') + ']';
-    };
-
+    //toMatlabString() {
+    //    var outputArray: string[] = [];
+    //    for (var row = 0; row < this.rowLength; row++) {
+    //        var strArray: any[] = [];
+    //        for (var column = 0; column < this.columnLength; column++)
+    //            strArray.push(this._array[row][column]);
+    //        outputArray.push(strArray.join(' '));
+    //    }
+    //    return '[' + outputArray.join('; ') + ']';
+    //}
     Matrix.getZeroMatrix = function (coordinate) {
         AssertHelper.assertArray(coordinate);
         var newMatrix = new Matrix();

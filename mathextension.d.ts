@@ -17,7 +17,8 @@ declare class Matrix<T> {
     public dimension : number;
     private _checkInternalCoordinateValidity(coordinate);
     constructor();
-    constructor(columnLength: number, items: T[]);
+    constructor(size: number[], items?: T[]);
+    private static _getArrayMatrix<T2>(size, itemChunk, subchunkSize);
     private _getInternalCoordinateFromIndex(index);
     private _getInternalCoordinate(index);
     public getFor(index: number): number;
@@ -27,12 +28,12 @@ declare class Matrix<T> {
     private static _expandArray<T2>(array, targetSize, fill);
     public expandSize(targetSize: number[], fill?: T): void;
     public clone(): Matrix<any>;
+    static isSameSize(x: Matrix<any>, y: Matrix<any>): boolean;
     public map(func: Function, input?: any, ...argArray: any[]): Matrix<T>;
     public mapFor(func: Function, condition: (item: number, coordinate: number[]) => void, input?: any, ...argArray: any[]): Matrix<any>;
     private static _forEach<T2>(array, func, parentCoordinate, depth);
     public forEach(func: (item: T, coordinate: number[]) => void): void;
     public toString(): string;
-    public toMatlabString(): string;
     static getZeroMatrix(coordinate: number[]): Matrix<{}>;
     static getIdentityMatrix(size: number): Matrix<{}>;
     static getLinearSpace(start: number, end: number, pointNumber: number): Matrix<{}>;
