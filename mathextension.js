@@ -241,7 +241,7 @@ var Matrix = (function () {
         return internalCoordinate;
     };
 
-    Matrix.prototype.getFor = function (coordinate) {
+    Matrix.prototype.get = function (coordinate) {
         AssertHelper.assertParameter(coordinate);
         var internalCoordinate = this._getInternalCoordinate(coordinate);
 
@@ -256,7 +256,7 @@ var Matrix = (function () {
             return undefined;
     };
 
-    Matrix.prototype.setFor = function (coordinate, input) {
+    Matrix.prototype.set = function (coordinate, input) {
         AssertHelper.assertParameter(coordinate);
         var internalCoordinate = this._getInternalCoordinate(coordinate);
 
@@ -358,9 +358,9 @@ var Matrix = (function () {
         newMatrix.forEach(function (item, coordinate) {
             if (!condition || condition(item, coordinate)) {
                 if (input == null)
-                    newMatrix.setFor(coordinate, func.apply(null, [item]));
+                    newMatrix.set(coordinate, func.apply(null, [item]));
                 else
-                    newMatrix.setFor(coordinate, func.apply(null, [item, Matrix.isMatrix(input) ? input.getFor(coordinate) : input].concat(argArray)));
+                    newMatrix.set(coordinate, func.apply(null, [item, Matrix.isMatrix(input) ? input.get(coordinate) : input].concat(argArray)));
             }
         });
 
@@ -526,7 +526,7 @@ var Matrix = (function () {
         AssertHelper.assert(this.dimension == 2, "Transpose function only supports two-dimensional matrices.");
         var newMatrix = Matrix.getZeroMatrix([this.columnLength, this.rowLength]);
         this.forEach(function (item, coordinate) {
-            newMatrix.setFor([coordinate[1], coordinate[0]], item);
+            newMatrix.set([coordinate[1], coordinate[0]], item);
         });
         return newMatrix;
     };

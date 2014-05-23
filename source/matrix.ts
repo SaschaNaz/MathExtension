@@ -166,9 +166,9 @@ class Matrix<T> {
         return internalCoordinate;
     }
 
-    getFor(index: number): T;
-    getFor(coordinate: number[]): T;
-    getFor(coordinate: any) {
+    get(index: number): T;
+    get(coordinate: number[]): T;
+    get(coordinate: any) {
         AssertHelper.assertParameter(coordinate);
         var internalCoordinate = this._getInternalCoordinate(coordinate);
 
@@ -184,9 +184,9 @@ class Matrix<T> {
             return undefined;
     }
 
-    setFor(index: number, input: T): Matrix<T>;
-    setFor(coordinate: number[], input: T): Matrix<T>;
-    setFor(coordinate: any, input: T) {
+    set(index: number, input: T): Matrix<T>;
+    set(coordinate: number[], input: T): Matrix<T>;
+    set(coordinate: any, input: T) {
         AssertHelper.assertParameter(coordinate);
         var internalCoordinate = this._getInternalCoordinate(coordinate);
 
@@ -279,9 +279,9 @@ class Matrix<T> {
         newMatrix.forEach((item, coordinate) => {
             if (!condition || condition(item, coordinate)) {
                 if (input == null)
-                    newMatrix.setFor(coordinate, func.apply(null, [item]));
+                    newMatrix.set(coordinate, func.apply(null, [item]));
                 else
-                    newMatrix.setFor(coordinate, func.apply(null, [item, Matrix.isMatrix(input) ? (<Matrix<T>>input).getFor(coordinate) : input].concat(argArray)));
+                    newMatrix.set(coordinate, func.apply(null, [item, Matrix.isMatrix(input) ? (<Matrix<T>>input).get(coordinate) : input].concat(argArray)));
             }
         });
 
@@ -465,7 +465,7 @@ class Matrix<T> {
         AssertHelper.assert(this.dimension == 2, "Transpose function only supports two-dimensional matrices.");
         var newMatrix = Matrix.getZeroMatrix([this.columnLength, this.rowLength]);
         this.forEach((item, coordinate) => {
-            newMatrix.setFor([coordinate[1], coordinate[0]], item);
+            newMatrix.set([coordinate[1], coordinate[0]], item);
         });
         return newMatrix;
     }

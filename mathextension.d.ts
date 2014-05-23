@@ -29,10 +29,10 @@ declare class Matrix<T> {
     private static _getArrayMatrix<T2>(size, itemChunk, subchunkSize);
     private _getInternalCoordinateFromIndex(index);
     private _getInternalCoordinate(index);
-    public getFor(index: number): T;
-    public getFor(coordinate: number[]): T;
-    public setFor(index: number, input: T): Matrix<T>;
-    public setFor(coordinate: number[], input: T): Matrix<T>;
+    public get(index: number): T;
+    public get(coordinate: number[]): T;
+    public set(index: number, input: T): Matrix<T>;
+    public set(coordinate: number[], input: T): Matrix<T>;
     private static _expandArray<T2>(array, targetSize, fill);
     public expand(targetSize: number[], fill?: T): void;
     public clone(): Matrix<any>;
