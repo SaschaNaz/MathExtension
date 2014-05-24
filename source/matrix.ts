@@ -23,19 +23,19 @@ class Matrix<T> {
             return i + 1;
     }
 
-    private _array: any[];
+    baseArray: any[];
     get columnLength() {
         if (this.rowLength > 0)
-            return this._array[0].length;
+            return this.baseArray[0].length;
         else
             return 0;
     }
     get rowLength() {
-        return this._array.length;
+        return this.baseArray.length;
     }
     get size() {
         var size: number[] = [];
-        var targetArray = <any[]>this._array;
+        var targetArray = <any[]>this.baseArray;
         while (Array.isArray(targetArray)) {
             size.push(targetArray.length);
             targetArray = targetArray[0];
@@ -67,7 +67,7 @@ class Matrix<T> {
     constructor(size: number[], items?: T[])
     constructor(size?: number[], items: T[] = []) {
         if (!Array.isArray(size)) {
-            this._array = [];
+            this.baseArray = [];
             return; // please do nothing, return an empty matrix
         }
 
@@ -83,7 +83,7 @@ class Matrix<T> {
             size = size.slice(0);
             size[0] = Math.ceil(items.length / subchunkSize);
         }
-        this._array = Matrix._getArrayMatrix(size, items, subchunkSize);
+        this.baseArray = Matrix._getArrayMatrix(size, items, subchunkSize);
 
 
         ////columnLength is a number
@@ -174,7 +174,7 @@ class Matrix<T> {
 
         if (this._isValidInternalCoordinate(internalCoordinate)) {
             var dimensioner = (<number[]>internalCoordinate).slice(0);
-            var targetArray = <any[]>this._array;
+            var targetArray = <any[]>this.baseArray;
             while (dimensioner.length > 0) {
                 targetArray = targetArray[dimensioner.shift()];
             }
@@ -195,7 +195,7 @@ class Matrix<T> {
         }
 
         var dimensioner = (<number[]>internalCoordinate).slice(0);
-        var targetArray = <any[]>this._array;
+        var targetArray = <any[]>this.baseArray;
         while (dimensioner.length > 1) {
             targetArray = targetArray[dimensioner.shift()];
         }
@@ -225,28 +225,41 @@ class Matrix<T> {
 
     //should be more efficient
     expand(targetSize: number[], fill?: T) {
-        var size = this.size;
+        AssertHelper.assert(!this.isSizeFixed, "Size-fixed matrices including submatrices cannot be expanded. Try cloning those ones.");
         AssertHelper.assertArray(targetSize);
+        var size = this.size;
         AssertHelper.assert(targetSize.length >= size.length, "Target dimension should be larger than or equal with original dimension");
 
-        if (this.serialSize > 0 && targetSize.length > size.length) {
-            var dimensionDifference = targetSize.length - size.length;
+        var finalExpandedSize = this._getFinalExpandedSize(targetSize);
+
+        if (this.serialSize > 0 && finalExpandedSize.length > size.length) {
+            var dimensionDifference = finalExpandedSize.length - size.length;
             //targetSize[dimensionDifference - 1]--;
             var newArray: any[] = [];
-            Matrix._expandArray(newArray, targetSize, fill);
+            Matrix._expandArray(newArray, finalExpandedSize, fill);
             //AssertHelper.assert(size.length == targetSize.length, "Coordinate dimension is not valid for this matrix.");
 
             var targetArray = newArray;
             for (var i = 0; i < dimensionDifference - 1; i++) {
                 targetArray = <any[]>targetArray[0];
             }
-            targetArray[0] = this._array;
-            Matrix._expandArray(this._array, targetSize.slice(targetSize.length - size.length), fill);
-            this._array = newArray;
+            targetArray[0] = this.baseArray;
+            Matrix._expandArray(this.baseArray, finalExpandedSize.slice(finalExpandedSize.length - size.length), fill);
+            this.baseArray = newArray;
         }
         else {
-            Matrix._expandArray(this._array, targetSize, fill);
+            Matrix._expandArray(this.baseArray, finalExpandedSize, fill);
         }
+    }
+
+    private _getFinalExpandedSize(targetSize: number[]) {
+        var finalSize = targetSize.slice(0);
+        var size = this.size;
+        var dimensionDifference = finalSize.length - size.length;
+        for (var i = 0; i < finalSize.length - dimensionDifference; i++)
+            if (finalSize[dimensionDifference + i] < size[i])
+                finalSize[dimensionDifference + i] = size[i];
+        return finalSize;
     }
 
     clone() {
@@ -326,12 +339,12 @@ class Matrix<T> {
         //    }
         //}
 
-        Matrix._forEach(this._array, func, [], this.dimension);
+        Matrix._forEach(this.baseArray, func, [], this.dimension);
     }
 
     toString() {
         var outputArray: string[] = ['['];
-        var stack = [this._array];
+        var stack = [this.baseArray];
         var indexes = [0];
 
         var dimension = this.dimension;
@@ -380,7 +393,7 @@ class Matrix<T> {
         AssertHelper.assertNumber(size);
         var newMatrix = Matrix.getZeroMatrix([size, size]);
         for (var i = 0; i < size; i++)
-            newMatrix._array[i][i] = 1;
+            newMatrix.baseArray[i][i] = 1;
         return newMatrix;
     }
 
@@ -391,7 +404,7 @@ class Matrix<T> {
         newMatrix.expand([pointNumber]);
         var gap = (end - start) / (pointNumber - 1);
         for (var i = 0; i < pointNumber; i++)
-            newMatrix._array[i] = start + gap * i;
+            newMatrix.baseArray[i] = start + gap * i;
         return newMatrix;
     }
 
@@ -404,7 +417,7 @@ class Matrix<T> {
         var length = Math.floor((end - start) / gap) + 1;
         newMatrix.expand([length]);
         for (var i = 0; i < length; i++)
-            newMatrix._array[i] = start + gap * i;
+            newMatrix.baseArray[i] = start + gap * i;
         return newMatrix;
     }
 
@@ -444,22 +457,38 @@ class Matrix<T> {
         return this.map(Math.substitute, input);
     }
 
-    matrixMultiply(input: Matrix<T>) {
-        AssertHelper.assert(this.columnLength == input.rowLength,
-            "Row length of the input matrix should be same with column length of the original one.");
-        var newColumnLength = input.columnLength;
-        var newItems: number[] = [];
-        this._array.forEach((rowArray) => {
-            for (var column = 0; column < input.columnLength; column++) {
-                var newItem = 0;
-                for (var row = 0; row < input.rowLength; row++)
-                    newItem += rowArray[row] * input._array[row][column];
-                newItems.push(newItem);
-            }
-        });
+    /*
+    Two-dimensional matrices multiply: column-row x row-column
+    Multi-dimensional matrices might be able to be multiplied as: (1)dim-(2)dim-...-(n)dim x (n)dim-(n-1)dim-...-(1)dim
+    */
+    //matrixMultiply(input: Matrix<T>) {
+    //    var thisSize = this.size;
+    //    var inputSize = input.size;
+    //    AssertHelper.assert(thisSize.length == inputSize.length,
+    //        "Transpose function only supports two-dimensional matrices.");
+    //    for (var i = 0; i < thisSize.length; i++)
+    //        AssertHelper.assert(thisSize[i] == inputSize[inputSize.length - i - 1],
+    //            "(i)dimensional length of original matrix should match (n-i)dimensional length of input matrix.");
 
-        return new Matrix(newColumnLength, newItems);
-    }
+    //    //AssertHelper.assert(thisSize[1] == inputSize[0],
+    //    //    "Row length of the input matrix should be same with column length of the original one.");
+    //    //var newColumnLength = inputSize[1];
+    //    //var newItems: number[] = [];
+    //    //this._array.forEach((rowArray) => {
+    //    //    for (var column = 0; column < input.columnLength; column++) {
+    //    //        var newItem = 0;
+    //    //        for (var row = 0; row < input.rowLength; row++)
+    //    //            newItem += rowArray[row] * input._array[row][column];
+    //    //        newItems.push(newItem);
+    //    //    }
+    //    //});
+
+    //    return new Matrix(newColumnLength, newItems);
+    //}
+
+    //private static _matrixMultiply<T>(x: Matrix<T>, y: Matrix<T>) {
+    //    if (x.dimension
+    //}
 
     transpose() {
         AssertHelper.assert(this.dimension == 2, "Transpose function only supports two-dimensional matrices.");
@@ -468,5 +497,29 @@ class Matrix<T> {
             newMatrix.set([coordinate[1], coordinate[0]], item);
         });
         return newMatrix;
+    }
+
+    coordinateOffset: number[];
+    get isSizeFixed() {
+        return this._fixedEndCoordinate !== undefined;
+    }
+    private _fixedEndCoordinate: number[];
+    submatrix(begin: number[], end?: number[]) {
+        var matrix = new Matrix();
+        matrix.baseArray = this.baseArray;
+
+        matrix.coordinateOffset = begin;
+        if (Array.isArray(end))
+            matrix._fixedEndCoordinate = end;
+        else {
+            var resultSize: number[] = [];
+            var thissize = this.size;
+            for (var i = 0; i < thissize.length; i++) {
+                resultSize[i] = thissize[i] - begin[i];
+            }
+            matrix._fixedEndCoordinate = resultSize;
+        }
+        matrix.isSizeFixed = true;
+        return matrix;
     }
 }
