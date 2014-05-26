@@ -54,8 +54,9 @@ declare class Matrix<T> {
     public transpose(): Matrix<{}>;
     public coordinateOffset: number[];
     public isSizeFixed : boolean;
-    private _fixedEndCoordinate;
+    private _snippedSize;
     public submatrix(begin: number[], end?: number[]): Matrix<{}>;
+    private _getProperSnippingCoordinate(coordinate);
 }
 interface Math {
     add(x: number, y: number): number;

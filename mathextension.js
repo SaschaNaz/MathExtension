@@ -111,13 +111,16 @@ var Matrix = (function () {
     });
     Object.defineProperty(Matrix.prototype, "size", {
         get: function () {
-            var size = [];
-            var targetArray = this.baseArray;
-            while (Array.isArray(targetArray)) {
-                size.push(targetArray.length);
-                targetArray = targetArray[0];
-            }
-            return size;
+            if (!this.isSizeFixed) {
+                var size = [];
+                var targetArray = this.baseArray;
+                while (Array.isArray(targetArray)) {
+                    size.push(targetArray.length);
+                    targetArray = targetArray[0];
+                }
+                return size;
+            } else
+                return this._snippedSize.slice(0);
         },
         enumerable: true,
         configurable: true
@@ -145,8 +148,6 @@ var Matrix = (function () {
     Matrix.prototype._isValidInternalCoordinate = function (coordinate) {
         var size = this.size;
         AssertHelper.assertArray(coordinate);
-
-        //AssertHelper.assert(coordinate.length == size.length, "Coordinate dimension is not valid for this matrix.");
         return coordinate.every(function (dimensionIndex, dimension) {
             return dimensionIndex < size[dimension];
         });
@@ -533,29 +534,51 @@ var Matrix = (function () {
 
     Object.defineProperty(Matrix.prototype, "isSizeFixed", {
         get: function () {
-            return this._fixedEndCoordinate !== undefined;
+            return this._snippedSize !== undefined;
         },
         enumerable: true,
         configurable: true
     });
 
+    //should support sub-dimension matrix (milestone)
     Matrix.prototype.submatrix = function (begin, end) {
         var matrix = new Matrix();
         matrix.baseArray = this.baseArray;
 
-        matrix.coordinateOffset = begin;
+        AssertHelper.assertArray(begin);
+        matrix.coordinateOffset = this._getProperSnippingCoordinate(begin);
+
+        var resultSize = [];
+        var resultingEnd;
         if (Array.isArray(end))
-            matrix._fixedEndCoordinate = end;
-        else {
-            var resultSize = [];
-            var thissize = this.size;
-            for (var i = 0; i < thissize.length; i++) {
-                resultSize[i] = thissize[i] - begin[i];
-            }
-            matrix._fixedEndCoordinate = resultSize;
-        }
+            resultingEnd = this._getProperSnippingCoordinate(end);
+        else
+            resultingEnd = this.size;
+
+        for (var i = 0; i < resultingEnd.length; i++)
+            resultSize[i] = resultingEnd[i] - begin[i];
+
+        matrix._snippedSize = resultSize;
         matrix.isSizeFixed = true;
         return matrix;
+    };
+    Matrix.prototype._getProperSnippingCoordinate = function (coordinate) {
+        var thisSize = this.size;
+        AssertHelper.assert(thisSize.length == coordinate.length, "Snipping coordinate's dimension should be same as original one, even if you want to get a sub-dimensional matrix.");
+        var proper = coordinate.slice(0);
+        for (var i = 0; i < proper.length; i++) {
+            if (proper[i] < 0) {
+                proper[i] = thisSize[i] + proper[i];
+                if (proper[i] < 0)
+                    proper[i] = 0;
+            } else if (proper[i] > thisSize[i])
+                proper[i] = thisSize[i];
+            else if (isNaN(proper[i]))
+                proper[i] = 0;
+        }
+        return proper;
+        //process minus number
+        //reduce numbers so that they fit in the current size
     };
     Matrix.isZeroBased = false;
     return Matrix;
