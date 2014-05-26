@@ -492,12 +492,11 @@ class Matrix<T> {
     //private static _matrixMultiply<T>(x: Matrix<T>, y: Matrix<T>) {
     //    if (x.dimension
     //}
-
+    
     transpose() {
-        AssertHelper.assert(this.dimension == 2, "Transpose function only supports two-dimensional matrices.");
-        var newMatrix = Matrix.getZeroMatrix([this.columnLength, this.rowLength]);
+        var newMatrix = new Matrix(this.size.reverse());
         this.forEach((item, coordinate) => {
-            newMatrix.set([coordinate[1], coordinate[0]], item);
+            newMatrix.set(coordinate.reverse(), item);
         });
         return newMatrix;
     }

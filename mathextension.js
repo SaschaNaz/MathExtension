@@ -524,10 +524,9 @@ var Matrix = (function () {
     //    if (x.dimension
     //}
     Matrix.prototype.transpose = function () {
-        AssertHelper.assert(this.dimension == 2, "Transpose function only supports two-dimensional matrices.");
-        var newMatrix = Matrix.getZeroMatrix([this.columnLength, this.rowLength]);
+        var newMatrix = new Matrix(this.size.reverse());
         this.forEach(function (item, coordinate) {
-            newMatrix.set([coordinate[1], coordinate[0]], item);
+            newMatrix.set(coordinate.reverse(), item);
         });
         return newMatrix;
     };
