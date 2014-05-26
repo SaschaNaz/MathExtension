@@ -8,7 +8,7 @@ declare class Matrix<T> {
     static isZeroBased: boolean;
     static isMatrix(object: any): boolean;
     private static _getZeroBasedIndex(i);
-    private static _getUserFriendlyIndex(i);
+    private static _getOneBasedIndex(i);
     public baseArray: any[];
     public columnLength : any;
     public rowLength : number;
@@ -18,13 +18,14 @@ declare class Matrix<T> {
     private _isValidInternalCoordinate(coordinate);
     constructor();
     constructor(size: number[], items?: T[]);
-    private static _getArrayMatrix<T2>(size, itemChunk, subchunkSize);
+    private static _getArrayMatrix<T2>(size, itemChunk, subchunkLength);
     private _getInternalCoordinateFromIndex(index);
     private _getInternalCoordinate(index);
+    private _getBaseArrayCoordinate(coordinate);
     public get(index: number): T;
     public get(coordinate: number[]): T;
-    public set(index: number, input: T): Matrix<T>;
-    public set(coordinate: number[], input: T): Matrix<T>;
+    public set(index: number, input: T): void;
+    public set(coordinate: number[], input: T): void;
     private static _expandArray<T2>(array, targetSize, fill);
     public expand(targetSize: number[], fill?: T): void;
     private _getFinalExpandedSize(targetSize);
@@ -52,7 +53,8 @@ declare class Matrix<T> {
     public replace(input: T): Matrix<T>;
     public replace(input: Matrix<T>): Matrix<T>;
     public transpose(): Matrix<{}>;
-    public coordinateOffset: number[];
+    private _coordinateOffset;
+    public coordinateOffset : number[];
     public isSizeFixed : boolean;
     private _snippedSize;
     public submatrix(begin: number[], end?: number[]): Matrix<{}>;

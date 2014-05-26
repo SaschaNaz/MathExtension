@@ -41,6 +41,7 @@
 var Matrix = (function () {
     function Matrix(size, items) {
         if (typeof items === "undefined") { items = []; }
+        this._coordinateOffset = [];
         if (!Array.isArray(size)) {
             this.baseArray = [];
             return;
@@ -59,6 +60,8 @@ var Matrix = (function () {
             size[0] = Math.ceil(items.length / subchunkSize);
         }
         this.baseArray = Matrix._getArrayMatrix(size, items, subchunkSize);
+        for (var i = 0; i < size.length; i++)
+            this._coordinateOffset.push(0);
         ////columnLength is a number
         //AssertHelper.assert(columnLength >= 1, "Column length should be larger than or equal to 1.");
         //AssertHelper.assert(items.length % columnLength == 0, "Invalid number of items");
@@ -85,7 +88,7 @@ var Matrix = (function () {
             return i - 1;
     };
 
-    Matrix._getUserFriendlyIndex = function (i) {
+    Matrix._getOneBasedIndex = function (i) {
         if (Matrix.isZeroBased)
             return i;
         else
@@ -148,12 +151,12 @@ var Matrix = (function () {
     Matrix.prototype._isValidInternalCoordinate = function (coordinate) {
         var size = this.size;
         AssertHelper.assertArray(coordinate);
-        return coordinate.every(function (dimensionIndex, dimension) {
-            return dimensionIndex < size[dimension];
+        return coordinate.every(function (n, dimension) {
+            return n < size[dimension] && n >= 0;
         });
     };
 
-    Matrix._getArrayMatrix = function (size, itemChunk, subchunkSize) {
+    Matrix._getArrayMatrix = function (size, itemChunk, subchunkLength) {
         //if (subchunkSize === undefined) {
         //    subchunkSize = 1;
         //    for (var i = 1; i < size.length; i++)
@@ -163,10 +166,10 @@ var Matrix = (function () {
             var array = [];
 
             var childSize = size.slice(1);
-            var nextSubchunkSize = subchunkSize / size[0];
+            var nextSubchunkLength = subchunkLength / childSize[0];
             for (var i = 0; i < size[0]; i++) {
-                var subchunk = itemChunk.slice(subchunkSize * i, subchunkSize * (i + 1));
-                array.push(this._getArrayMatrix(childSize, subchunk, nextSubchunkSize));
+                var subchunk = itemChunk.slice(subchunkLength * i, subchunkLength * (i + 1));
+                array.push(this._getArrayMatrix(childSize, subchunk, nextSubchunkLength));
             }
             return array;
         } else {
@@ -205,8 +208,8 @@ var Matrix = (function () {
         AssertHelper.assertParameter(coordinate);
         var internalCoordinate = [];
         if (Array.isArray(coordinate)) {
-            internalCoordinate = coordinate.map(function (i) {
-                return Matrix._getZeroBasedIndex(i);
+            internalCoordinate = coordinate.map(function (n) {
+                return Matrix._getZeroBasedIndex(n);
             });
         } else {
             var index = coordinate;
@@ -216,12 +219,19 @@ var Matrix = (function () {
         return internalCoordinate;
     };
 
+    Matrix.prototype._getBaseArrayCoordinate = function (coordinate) {
+        var _this = this;
+        return coordinate.map(function (n, dimension) {
+            return n + _this._coordinateOffset[dimension];
+        });
+    };
+
     Matrix.prototype.get = function (coordinate) {
         AssertHelper.assertParameter(coordinate);
         var internalCoordinate = this._getInternalCoordinate(coordinate);
 
         if (this._isValidInternalCoordinate(internalCoordinate)) {
-            var dimensioner = internalCoordinate.slice(0);
+            var dimensioner = this._getBaseArrayCoordinate(internalCoordinate).slice(0);
             var targetArray = this.baseArray;
             while (dimensioner.length > 0) {
                 targetArray = targetArray[dimensioner.shift()];
@@ -236,18 +246,20 @@ var Matrix = (function () {
         var internalCoordinate = this._getInternalCoordinate(coordinate);
 
         if (!this._isValidInternalCoordinate(internalCoordinate)) {
-            this.expand(internalCoordinate.map(function (i) {
-                return i + 1;
-            }), undefined);
+            if (!this.isSizeFixed)
+                this.expand(internalCoordinate.map(function (i) {
+                    return i + 1;
+                }), undefined);
+            else
+                return;
         }
 
-        var dimensioner = internalCoordinate.slice(0);
+        var dimensioner = this._getBaseArrayCoordinate(internalCoordinate).slice(0);
         var targetArray = this.baseArray;
         while (dimensioner.length > 1) {
             targetArray = targetArray[dimensioner.shift()];
         }
         targetArray[dimensioner.shift()] = input;
-        return this;
     };
 
     Matrix._expandArray = function (array, targetSize, fill) {
@@ -359,12 +371,12 @@ var Matrix = (function () {
         var _this = this;
         if (depth == 1) {
             array.forEach(function (item, index) {
-                func(item, parentCoordinate.concat(Matrix._getUserFriendlyIndex(index)));
+                func(item, parentCoordinate.concat(Matrix._getOneBasedIndex(index)));
             });
         } else if (depth > 1) {
             var shallower = depth - 1;
             array.forEach(function (childArray, index) {
-                _this._forEach(childArray, func, parentCoordinate.concat(Matrix._getUserFriendlyIndex(index)), shallower);
+                _this._forEach(childArray, func, parentCoordinate.concat(Matrix._getOneBasedIndex(index)), shallower);
             });
         }
     };
@@ -531,6 +543,13 @@ var Matrix = (function () {
         return newMatrix;
     };
 
+    Object.defineProperty(Matrix.prototype, "coordinateOffset", {
+        get: function () {
+            return this._coordinateOffset.slice(0);
+        },
+        enumerable: true,
+        configurable: true
+    });
     Object.defineProperty(Matrix.prototype, "isSizeFixed", {
         get: function () {
             return this._snippedSize !== undefined;
@@ -545,17 +564,17 @@ var Matrix = (function () {
         matrix.baseArray = this.baseArray;
 
         AssertHelper.assertArray(begin);
-        matrix.coordinateOffset = this._getProperSnippingCoordinate(begin);
+        matrix._coordinateOffset = this._getProperSnippingCoordinate(this._getInternalCoordinate(begin));
 
         var resultSize = [];
         var resultingEnd;
         if (Array.isArray(end))
-            resultingEnd = this._getProperSnippingCoordinate(end);
+            resultingEnd = this._getProperSnippingCoordinate(this._getInternalCoordinate(end));
         else
             resultingEnd = this.size;
 
         for (var i = 0; i < resultingEnd.length; i++)
-            resultSize[i] = resultingEnd[i] - begin[i];
+            resultSize[i] = resultingEnd[i] - matrix._coordinateOffset[i];
 
         matrix._snippedSize = resultSize;
         matrix.isSizeFixed = true;

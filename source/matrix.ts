@@ -16,7 +16,7 @@ class Matrix<T> {
             return i - 1;
     }
 
-    private static _getUserFriendlyIndex(i: number) {
+    private static _getOneBasedIndex(i: number) {
         if (Matrix.isZeroBased)
             return i;
         else
@@ -61,8 +61,8 @@ class Matrix<T> {
     private _isValidInternalCoordinate(coordinate: number[]) {
         var size = this.size;
         AssertHelper.assertArray(coordinate);
-        return coordinate.every((dimensionIndex, dimension) => {
-            return dimensionIndex < size[dimension];
+        return coordinate.every((n, dimension) => {
+            return n < size[dimension] && n >= 0;
         });
     }
 
@@ -87,7 +87,8 @@ class Matrix<T> {
             size[0] = Math.ceil(items.length / subchunkSize);
         }
         this.baseArray = Matrix._getArrayMatrix(size, items, subchunkSize);
-
+        for (var i = 0; i < size.length; i++)
+            this._coordinateOffset.push(0);
 
         ////columnLength is a number
         //AssertHelper.assert(columnLength >= 1, "Column length should be larger than or equal to 1.");
@@ -101,7 +102,7 @@ class Matrix<T> {
         //}
     }
 
-    private static _getArrayMatrix<T2>(size: number[], itemChunk: T2[], subchunkSize: number) {
+    private static _getArrayMatrix<T2>(size: number[], itemChunk: T2[], subchunkLength: number) {
         //if (subchunkSize === undefined) {
         //    subchunkSize = 1;
         //    for (var i = 1; i < size.length; i++)
@@ -111,10 +112,10 @@ class Matrix<T> {
             var array: any[] = [];
             
             var childSize = size.slice(1);
-            var nextSubchunkSize = subchunkSize / size[0];
+            var nextSubchunkLength = subchunkLength / childSize[0];
             for (var i = 0; i < size[0]; i++) {
-                var subchunk = itemChunk.slice(subchunkSize * i, subchunkSize * (i + 1));
-                array.push(this._getArrayMatrix(childSize, subchunk, nextSubchunkSize));
+                var subchunk = itemChunk.slice(subchunkLength * i, subchunkLength * (i + 1));
+                array.push(this._getArrayMatrix(childSize, subchunk, nextSubchunkLength));
             }
             return array;//var nextSubchunkSize = subchunkSize / 
         }
@@ -157,8 +158,8 @@ class Matrix<T> {
         AssertHelper.assertParameter(coordinate);
         var internalCoordinate: number[] = [];
         if (Array.isArray(coordinate)) {
-            internalCoordinate = (<number[]>coordinate).map((i) => {
-                return Matrix._getZeroBasedIndex(i);
+            internalCoordinate = (<number[]>coordinate).map((n) => {
+                return Matrix._getZeroBasedIndex(n);
             });
         }
         else {
@@ -169,6 +170,10 @@ class Matrix<T> {
         return internalCoordinate;
     }
 
+    private _getBaseArrayCoordinate(coordinate: number[]) {
+        return coordinate.map((n, dimension) => { return n + this._coordinateOffset[dimension] });
+    }
+
     get(index: number): T;
     get(coordinate: number[]): T;
     get(coordinate: any) {
@@ -176,7 +181,7 @@ class Matrix<T> {
         var internalCoordinate = this._getInternalCoordinate(coordinate);
 
         if (this._isValidInternalCoordinate(internalCoordinate)) {
-            var dimensioner = (<number[]>internalCoordinate).slice(0);
+            var dimensioner = this._getBaseArrayCoordinate(<number[]>internalCoordinate).slice(0);
             var targetArray = <any[]>this.baseArray;
             while (dimensioner.length > 0) {
                 targetArray = targetArray[dimensioner.shift()];
@@ -187,23 +192,25 @@ class Matrix<T> {
             return undefined;
     }
 
-    set(index: number, input: T): Matrix<T>;
-    set(coordinate: number[], input: T): Matrix<T>;
+    set(index: number, input: T): void;
+    set(coordinate: number[], input: T): void;
     set(coordinate: any, input: T) {
         AssertHelper.assertParameter(coordinate);
         var internalCoordinate = this._getInternalCoordinate(coordinate);
 
         if (!this._isValidInternalCoordinate(internalCoordinate)) {
-            this.expand(internalCoordinate.map((i: number) => { return i + 1 }), undefined);
+            if (!this.isSizeFixed)
+                this.expand(internalCoordinate.map((i: number) => { return i + 1 }), undefined);
+            else
+                return;
         }
 
-        var dimensioner = (<number[]>internalCoordinate).slice(0);
+        var dimensioner = this._getBaseArrayCoordinate(<number[]>internalCoordinate).slice(0);
         var targetArray = <any[]>this.baseArray;
         while (dimensioner.length > 1) {
             targetArray = targetArray[dimensioner.shift()];
         }
         targetArray[dimensioner.shift()] = input;
-        return this;
     }
 
     private static _expandArray<T2>(array: any[], targetSize: number[], fill: T2) {
@@ -307,13 +314,13 @@ class Matrix<T> {
     private static _forEach<T2>(array: any[], func: (item: T2, coordinate: number[]) => void, parentCoordinate: number[], depth: number) {
         if (depth == 1) {
             (<T2[]>array).forEach((item, index) => {
-                func(item, parentCoordinate.concat(Matrix._getUserFriendlyIndex(index)));
+                func(item, parentCoordinate.concat(Matrix._getOneBasedIndex(index)));
             });
         }
         else if (depth > 1) {
             var shallower = depth - 1;
             (<any[][]>array).forEach((childArray, index) => {
-                this._forEach(childArray, func, parentCoordinate.concat(Matrix._getUserFriendlyIndex(index)), shallower);
+                this._forEach(childArray, func, parentCoordinate.concat(Matrix._getOneBasedIndex(index)), shallower);
             });
         }
     }
@@ -501,7 +508,10 @@ class Matrix<T> {
         return newMatrix;
     }
 
-    coordinateOffset: number[];
+    private _coordinateOffset: number[] = [];
+    get coordinateOffset() {
+        return this._coordinateOffset.slice(0);
+    }
     get isSizeFixed() {
         return this._snippedSize !== undefined;
     }
@@ -513,17 +523,17 @@ class Matrix<T> {
         matrix.baseArray = this.baseArray;
 
         AssertHelper.assertArray(begin);
-        matrix.coordinateOffset = this._getProperSnippingCoordinate(begin);
+        matrix._coordinateOffset = this._getProperSnippingCoordinate(this._getInternalCoordinate(begin));
 
         var resultSize: number[] = [];
         var resultingEnd: number[];
         if (Array.isArray(end))
-            resultingEnd = this._getProperSnippingCoordinate(end);
+            resultingEnd = this._getProperSnippingCoordinate(this._getInternalCoordinate(end));
         else
             resultingEnd = this.size;
 
         for (var i = 0; i < resultingEnd.length; i++)
-            resultSize[i] = resultingEnd[i] - begin[i];
+            resultSize[i] = resultingEnd[i] - matrix._coordinateOffset[i];
 
         matrix._snippedSize = resultSize;
         matrix.isSizeFixed = true;
