@@ -1,16 +1,8 @@
-﻿declare class AssertHelper {
+declare class AssertHelper {
     static assertParameter(...parameters: any[]): void;
     static assertNumber(...numbers: number[]): void;
     static assertArray(...arrays: any[][]): void;
     static assert(condition: boolean, message: string): void;
-}
-interface Math {
-    add(x: number, y: number): number;
-    subtract(x: number, y: number): number;
-    multiply(x: number, y: number): number;
-    divide(x: number, y: number): number;
-    substitute(x: number, y: number): number;
-    factorial(x: number): number;
 }
 declare class Matrix<T> {
     static isZeroBased: boolean;
@@ -67,6 +59,14 @@ declare class Matrix<T> {
     public isSizeFixed : boolean;
     public submatrix(start: number[], end?: number[]): Matrix<T>;
     private _getProperSnippingCoordinate(coordinate);
+}
+interface Math {
+    add(x: number, y: number): number;
+    subtract(x: number, y: number): number;
+    multiply(x: number, y: number): number;
+    divide(x: number, y: number): number;
+    substitute(x: number, y: number): number;
+    factorial(x: number): number;
 }
 declare class BlobStream {
     public blob: Blob;
