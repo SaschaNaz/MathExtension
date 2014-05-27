@@ -512,7 +512,7 @@
 
     //should support sub-dimension matrix (milestone)
     submatrix(start: number[], end?: number[]) {
-        var matrix = new Matrix();
+        var matrix = new Matrix<T>();
         matrix.baseArray = this.baseArray;
 
         AssertHelper.assertArray(start);
