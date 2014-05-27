@@ -92,8 +92,6 @@
             size[0] = Math.ceil(items.length / subchunkSize);
         }
         this.baseArray = Matrix._getArrayMatrix(size, items, subchunkSize);
-        for (var i = 0; i < size.length; i++)
-            this._coordinateStartOffset.push(0);
 
         ////columnLength is a number
         //AssertHelper.assert(columnLength >= 1, "Column length should be larger than or equal to 1.");
@@ -176,7 +174,8 @@
     }
 
     private _getBaseArrayCoordinate(coordinate: number[]) {
-        return coordinate.map((n, dimension) => { return n + this._coordinateStartOffset[dimension] });
+        var startOffset = this.coordinateOffset;
+        return coordinate.map((n, dimension) => { return n + startOffset[dimension] });
     }
 
     get(index: number): T;
@@ -299,7 +298,7 @@
         return <Matrix<T>>this.mapFor.apply(this, [func, null, input].concat(argArray));
     }
 
-    mapFor(func: Function, condition: (item: number, coordinate: number[]) => void, input?: any, ...argArray: any[]) {
+    mapFor(func: Function, condition: (item: number, coordinate: number[]) => boolean, input?: any, ...argArray: any[]) {
         if (input != null && Matrix.isMatrix(input))
             AssertHelper.assert(Matrix.isSameSize(this, input), "Dimensions should match each other");
 
@@ -316,80 +315,53 @@
         return newMatrix;
     }
 
-    private static _forEach<T2>(array: any[], func: (item: T2, coordinate: number[]) => void, parentCoordinate: number[], depth: number) {
-        if (depth == 1) {
-            (<T2[]>array).forEach((item, index) => {
-                func(item, parentCoordinate.concat(Matrix._getOneBasedIndex(index)));
-            });
-        }
-        else if (depth > 1) {
-            var shallower = depth - 1;
-            (<any[][]>array).forEach((childArray, index) => {
-                this._forEach(childArray, func, parentCoordinate.concat(Matrix._getOneBasedIndex(index)), shallower);
-            });
-        }
-    }
-
     /*
-    일단 머리감고 일단 최적화는 나중에 하고 고치기부터 하자
-    1. _snippedSize를 _coordinateEndOffset으로 교체하고, size()는 여기서부터 계산하도록 한다
-    이유는 _snippedSize보다 _coordinateEndOffset 쪽이 더 직접 쓰기 유용함
     2. forEach에서 this.baseArray를 통째로 보내지 말고 coordinateStartOffset과 EndOffset을 이용해 잘라 보내고
     _forEach에서도 마찬가지로 잘라 보낸다
     */
 
-    forEach(func: (item: T, coordinate: number[]) => void) {
-        //var stack = [this._array];
-        //var indexes = [0];
-
-        //var dimension = this.dimension;
-        //while (stack.length > 0) {
-        //    if (indexes[0] < stack[0].length) {
-        //        if (stack.length == dimension) {
-        //            outputArray.push(stack[0][indexes[0]]);
-        //            indexes[0]++;
-        //        }
-        //        else {
-        //            outputArray.push('[');
-        //            stack.unshift(stack[0][indexes[0]]);
-        //            indexes[0]++;
-        //            indexes.unshift(0);
-        //        }
-        //    }
-        //    else {
-        //        stack.shift();
-        //        indexes.shift();
-        //    }
-        //}
-
-        Matrix._forEach(this.baseArray, func, [], this.dimension);
-    }
-
-    toString() {
-        var outputArray: string[] = ['['];
+    private _forEach(getItem: (item: T, coordinate: number[]) => any, getDeeper?: () => any, getSwallower?: () => any) {
         var stack = [this.baseArray];
-        var indexes = [0];
+        var startOffset = this.coordinateOffset;
+        var endOffset = this._coordinateEndOffset || this.size;
+
+        var indices: number[] = [];
+        var currentIndex = startOffset[0];
 
         var dimension = this.dimension;
         while (stack.length > 0) {
-            if (indexes[0] < stack[0].length) {
+            if (currentIndex < endOffset[indices.length]) {
                 if (stack.length == dimension) {
-                    outputArray.push(stack[0][indexes[0]]);
-                    indexes[0]++;
+                    getItem(stack[0][currentIndex], indices.concat(currentIndex).map((n) => { return Matrix._getOneBasedIndex(n) }));
+                    currentIndex++;
                 }
                 else {
-                    outputArray.push('[');
-                    stack.unshift(stack[0][indexes[0]]);
-                    indexes[0]++;
-                    indexes.unshift(0);
+                    if (getDeeper)
+                        getDeeper();
+                    stack.unshift(stack[0][currentIndex]);
+                    indices.push(currentIndex);
+                    currentIndex = startOffset[indices.length];
                 }
             }
             else {
                 stack.shift();
-                indexes.shift();
-                outputArray.push(']');
+                currentIndex = indices.pop() + 1;
+                if (getSwallower)
+                    getSwallower();
             }
         }
+    }
+
+    forEach(func: (item: T, coordinate: number[], matrix: Matrix<T>) => any) {
+        this._forEach((item, coordinate) => { func(item, coordinate, this) });
+    }
+
+    toString() {
+        var outputArray: string[] = ['['];
+        this._forEach(
+            (item) => { outputArray.push(<any>item) },
+            () => { outputArray.push('[') },
+            () => { outputArray.push(']') });
 
         return outputArray.join(' ');
     }
@@ -521,10 +493,18 @@
         return newMatrix;
     }
 
-    private _coordinateStartOffset: number[] = [];
+    private _coordinateStartOffset: number[];
     private _coordinateEndOffset: number[];
     get coordinateOffset() {
-        return this._coordinateStartOffset.slice(0);
+        if (this.isSizeFixed)
+            return this._coordinateStartOffset.slice(0);
+        else {
+            var offset: number[] = [];
+            var dimension = this.dimension;
+            for (var i = 0; i < dimension; i++)
+                offset.push(0);
+            return offset;
+        }
     }
     get isSizeFixed() {
         return this._coordinateEndOffset !== undefined;

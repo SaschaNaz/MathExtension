@@ -41,7 +41,6 @@
 var Matrix = (function () {
     function Matrix(size, items) {
         if (typeof items === "undefined") { items = []; }
-        this._coordinateStartOffset = [];
         if (!Array.isArray(size)) {
             this.baseArray = [];
             return;
@@ -60,8 +59,6 @@ var Matrix = (function () {
             size[0] = Math.ceil(items.length / subchunkSize);
         }
         this.baseArray = Matrix._getArrayMatrix(size, items, subchunkSize);
-        for (var i = 0; i < size.length; i++)
-            this._coordinateStartOffset.push(0);
         ////columnLength is a number
         //AssertHelper.assert(columnLength >= 1, "Column length should be larger than or equal to 1.");
         //AssertHelper.assert(items.length % columnLength == 0, "Invalid number of items");
@@ -225,9 +222,9 @@ var Matrix = (function () {
     };
 
     Matrix.prototype._getBaseArrayCoordinate = function (coordinate) {
-        var _this = this;
+        var startOffset = this.coordinateOffset;
         return coordinate.map(function (n, dimension) {
-            return n + _this._coordinateStartOffset[dimension];
+            return n + startOffset[dimension];
         });
     };
 
@@ -372,75 +369,58 @@ var Matrix = (function () {
         return newMatrix;
     };
 
-    Matrix._forEach = function (array, func, parentCoordinate, depth) {
-        var _this = this;
-        if (depth == 1) {
-            array.forEach(function (item, index) {
-                func(item, parentCoordinate.concat(Matrix._getOneBasedIndex(index)));
-            });
-        } else if (depth > 1) {
-            var shallower = depth - 1;
-            array.forEach(function (childArray, index) {
-                _this._forEach(childArray, func, parentCoordinate.concat(Matrix._getOneBasedIndex(index)), shallower);
-            });
-        }
-    };
-
     /*
-    일단 머리감고 일단 최적화는 나중에 하고 고치기부터 하자
-    1. _snippedSize를 _coordinateEndOffset으로 교체하고, size()는 여기서부터 계산하도록 한다
-    이유는 _snippedSize보다 _coordinateEndOffset 쪽이 더 직접 쓰기 유용함
     2. forEach에서 this.baseArray를 통째로 보내지 말고 coordinateStartOffset과 EndOffset을 이용해 잘라 보내고
     _forEach에서도 마찬가지로 잘라 보낸다
     */
+    Matrix.prototype._forEach = function (getItem, getDeeper, getSwallower) {
+        var stack = [this.baseArray];
+        var startOffset = this.coordinateOffset;
+        var endOffset = this._coordinateEndOffset || this.size;
+
+        var indices = [];
+        var currentIndex = startOffset[0];
+
+        var dimension = this.dimension;
+        while (stack.length > 0) {
+            if (currentIndex < endOffset[indices.length]) {
+                if (stack.length == dimension) {
+                    getItem(stack[0][currentIndex], indices.concat(currentIndex).map(function (n) {
+                        return Matrix._getOneBasedIndex(n);
+                    }));
+                    currentIndex++;
+                } else {
+                    if (getDeeper)
+                        getDeeper();
+                    stack.unshift(stack[0][currentIndex]);
+                    indices.push(currentIndex);
+                    currentIndex = startOffset[indices.length];
+                }
+            } else {
+                stack.shift();
+                currentIndex = indices.pop() + 1;
+                if (getSwallower)
+                    getSwallower();
+            }
+        }
+    };
+
     Matrix.prototype.forEach = function (func) {
-        //var stack = [this._array];
-        //var indexes = [0];
-        //var dimension = this.dimension;
-        //while (stack.length > 0) {
-        //    if (indexes[0] < stack[0].length) {
-        //        if (stack.length == dimension) {
-        //            outputArray.push(stack[0][indexes[0]]);
-        //            indexes[0]++;
-        //        }
-        //        else {
-        //            outputArray.push('[');
-        //            stack.unshift(stack[0][indexes[0]]);
-        //            indexes[0]++;
-        //            indexes.unshift(0);
-        //        }
-        //    }
-        //    else {
-        //        stack.shift();
-        //        indexes.shift();
-        //    }
-        //}
-        Matrix._forEach(this.baseArray, func, [], this.dimension);
+        var _this = this;
+        this._forEach(function (item, coordinate) {
+            func(item, coordinate, _this);
+        });
     };
 
     Matrix.prototype.toString = function () {
         var outputArray = ['['];
-        var stack = [this.baseArray];
-        var indexes = [0];
-
-        var dimension = this.dimension;
-        while (stack.length > 0) {
-            if (indexes[0] < stack[0].length) {
-                if (stack.length == dimension) {
-                    outputArray.push(stack[0][indexes[0]]);
-                    indexes[0]++;
-                } else {
-                    outputArray.push('[');
-                    stack.unshift(stack[0][indexes[0]]);
-                    indexes[0]++;
-                    indexes.unshift(0);
-                }
-            } else {
-                stack.shift();
-                indexes.shift();
-                outputArray.push(']');
-            }
-        }
+        this._forEach(function (item) {
+            outputArray.push(item);
+        }, function () {
+            outputArray.push('[');
+        }, function () {
+            outputArray.push(']');
+        });
 
         return outputArray.join(' ');
     };
@@ -557,7 +537,15 @@ var Matrix = (function () {
 
     Object.defineProperty(Matrix.prototype, "coordinateOffset", {
         get: function () {
-            return this._coordinateStartOffset.slice(0);
+            if (this.isSizeFixed)
+                return this._coordinateStartOffset.slice(0);
+            else {
+                var offset = [];
+                var dimension = this.dimension;
+                for (var i = 0; i < dimension; i++)
+                    offset.push(0);
+                return offset;
+            }
         },
         enumerable: true,
         configurable: true
@@ -582,7 +570,6 @@ var Matrix = (function () {
         else
             matrix._coordinateEndOffset = this.size.slice(0);
 
-        matrix.isSizeFixed = true;
         return matrix;
     };
     Matrix.prototype._getProperSnippingCoordinate = function (coordinate) {

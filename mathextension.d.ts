@@ -32,9 +32,9 @@ declare class Matrix<T> {
     public clone(): Matrix<any>;
     static isSameSize(x: Matrix<any>, y: Matrix<any>): boolean;
     public map(func: Function, input?: any, ...argArray: any[]): Matrix<T>;
-    public mapFor(func: Function, condition: (item: number, coordinate: number[]) => void, input?: any, ...argArray: any[]): Matrix<any>;
-    private static _forEach<T2>(array, func, parentCoordinate, depth);
-    public forEach(func: (item: T, coordinate: number[]) => void): void;
+    public mapFor(func: Function, condition: (item: number, coordinate: number[]) => boolean, input?: any, ...argArray: any[]): Matrix<any>;
+    private _forEach(getItem, getDeeper?, getSwallower?);
+    public forEach(func: (item: T, coordinate: number[], matrix: Matrix<T>) => any): void;
     public toString(): string;
     static getZeroMatrix(coordinate: number[]): Matrix<{}>;
     static getIdentityMatrix(size: number): Matrix<{}>;
