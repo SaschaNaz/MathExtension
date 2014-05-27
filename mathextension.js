@@ -73,14 +73,14 @@ var Matrix = (function () {
         }
 
         for (var i = 1; i < size.length; i++) {
-            if (isNaN(size[i]))
-                throw new Error("NaN is allowed only on the highest matrix dimension length.");
+            if (size[i] === undefined)
+                throw new Error("Undefined number is allowed only on the highest matrix dimension length.");
         }
 
         var subchunkSize = 1;
         for (var i = 1; i < size.length; i++)
             subchunkSize *= size[i];
-        if (isNaN(size[0])) {
+        if (size[0] === undefined) {
             size = size.slice(0);
             size[0] = Math.ceil(items.length / subchunkSize);
         }
@@ -105,17 +105,25 @@ var Matrix = (function () {
 
     //this implicitly returns NaN if isNaN(i) is true
     Matrix._getZeroBasedIndex = function (i) {
-        if (Matrix.isZeroBased)
+        if (i > 0) {
+            if (Matrix.isZeroBased)
+                return i;
+            else
+                return i - 1;
+        } else if (i < 0)
             return i;
         else
-            return i - 1;
+            return NaN;
     };
 
     Matrix._getOneBasedIndex = function (i) {
-        if (Matrix.isZeroBased)
+        if (i >= 0) {
+            if (Matrix.isZeroBased)
+                return i;
+            else
+                return i + 1;
+        } else
             return i;
-        else
-            return i + 1;
     };
 
     Object.defineProperty(Matrix.prototype, "columnLength", {
