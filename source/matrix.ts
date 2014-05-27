@@ -10,27 +10,17 @@
 
     //this implicitly returns NaN if isNaN(i) is true
     private static _getZeroBasedIndex(i: number) {
-        if (i > 0) {
-            if (Matrix.isZeroBased)
-                return i;
-            else
-                return i - 1;
-        }
-        else if (i < 0)
+        if (Matrix.isZeroBased)
             return i;
         else
-            return NaN;
+            return i - 1;
     }
 
     private static _getOneBasedIndex(i: number) {
-        if (i >= 0) {
-            if (Matrix.isZeroBased)
-                return i;
-            else
-                return i + 1;
-        }
-        else
+        if (Matrix.isZeroBased)
             return i;
+        else
+            return i + 1;
     }
 
     baseArray: any[];
@@ -528,7 +518,7 @@
         AssertHelper.assertArray(start);
         matrix._coordinateStartOffset = this._getProperSnippingCoordinate(this._getInternalCoordinate(start));
         if (Array.isArray(end))
-            matrix._coordinateEndOffset = this._getProperSnippingCoordinate(this._getInternalCoordinate(end));
+            matrix._coordinateEndOffset = this._getProperSnippingCoordinate(end);//do not convert end coordinate so that the whole area would include end position in ONE-BASED system.
         else
             matrix._coordinateEndOffset = this.size.slice(0);
 

@@ -79,25 +79,17 @@ var Matrix = (function () {
 
     //this implicitly returns NaN if isNaN(i) is true
     Matrix._getZeroBasedIndex = function (i) {
-        if (i > 0) {
-            if (Matrix.isZeroBased)
-                return i;
-            else
-                return i - 1;
-        } else if (i < 0)
+        if (Matrix.isZeroBased)
             return i;
         else
-            return NaN;
+            return i - 1;
     };
 
     Matrix._getOneBasedIndex = function (i) {
-        if (i >= 0) {
-            if (Matrix.isZeroBased)
-                return i;
-            else
-                return i + 1;
-        } else
+        if (Matrix.isZeroBased)
             return i;
+        else
+            return i + 1;
     };
 
     Object.defineProperty(Matrix.prototype, "columnLength", {
@@ -574,7 +566,7 @@ var Matrix = (function () {
         AssertHelper.assertArray(start);
         matrix._coordinateStartOffset = this._getProperSnippingCoordinate(this._getInternalCoordinate(start));
         if (Array.isArray(end))
-            matrix._coordinateEndOffset = this._getProperSnippingCoordinate(this._getInternalCoordinate(end));
+            matrix._coordinateEndOffset = this._getProperSnippingCoordinate(end); //do not convert end coordinate so that the whole area would include end position in ONE-BASED system.
         else
             matrix._coordinateEndOffset = this.size.slice(0);
 
