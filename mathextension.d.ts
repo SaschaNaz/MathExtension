@@ -53,11 +53,11 @@ declare class Matrix<T> {
     public replace(input: T): Matrix<T>;
     public replace(input: Matrix<T>): Matrix<T>;
     public transpose(): Matrix<{}>;
-    private _coordinateOffset;
+    private _coordinateStartOffset;
+    private _coordinateEndOffset;
     public coordinateOffset : number[];
     public isSizeFixed : boolean;
-    private _snippedSize;
-    public submatrix(begin: number[], end?: number[]): Matrix<{}>;
+    public submatrix(start: number[], end?: number[]): Matrix<{}>;
     private _getProperSnippingCoordinate(coordinate);
 }
 interface Math {

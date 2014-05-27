@@ -41,7 +41,7 @@
 var Matrix = (function () {
     function Matrix(size, items) {
         if (typeof items === "undefined") { items = []; }
-        this._coordinateOffset = [];
+        this._coordinateStartOffset = [];
         if (!Array.isArray(size)) {
             this.baseArray = [];
             return;
@@ -61,7 +61,7 @@ var Matrix = (function () {
         }
         this.baseArray = Matrix._getArrayMatrix(size, items, subchunkSize);
         for (var i = 0; i < size.length; i++)
-            this._coordinateOffset.push(0);
+            this._coordinateStartOffset.push(0);
         ////columnLength is a number
         //AssertHelper.assert(columnLength >= 1, "Column length should be larger than or equal to 1.");
         //AssertHelper.assert(items.length % columnLength == 0, "Invalid number of items");
@@ -114,16 +114,21 @@ var Matrix = (function () {
     });
     Object.defineProperty(Matrix.prototype, "size", {
         get: function () {
+            var size = [];
             if (!this.isSizeFixed) {
-                var size = [];
                 var targetArray = this.baseArray;
                 while (Array.isArray(targetArray)) {
                     size.push(targetArray.length);
                     targetArray = targetArray[0];
                 }
-                return size;
-            } else
-                return this._snippedSize.slice(0);
+            } else {
+                var startOffset = this._coordinateStartOffset;
+                var endOffset = this._coordinateEndOffset;
+                for (var i = 0; i < endOffset.length; i++)
+                    size[i] = endOffset[i] - startOffset[i];
+            }
+
+            return size;
         },
         enumerable: true,
         configurable: true
@@ -222,7 +227,7 @@ var Matrix = (function () {
     Matrix.prototype._getBaseArrayCoordinate = function (coordinate) {
         var _this = this;
         return coordinate.map(function (n, dimension) {
-            return n + _this._coordinateOffset[dimension];
+            return n + _this._coordinateStartOffset[dimension];
         });
     };
 
@@ -381,6 +386,13 @@ var Matrix = (function () {
         }
     };
 
+    /*
+    일단 머리감고 일단 최적화는 나중에 하고 고치기부터 하자
+    1. _snippedSize를 _coordinateEndOffset으로 교체하고, size()는 여기서부터 계산하도록 한다
+    이유는 _snippedSize보다 _coordinateEndOffset 쪽이 더 직접 쓰기 유용함
+    2. forEach에서 this.baseArray를 통째로 보내지 말고 coordinateStartOffset과 EndOffset을 이용해 잘라 보내고
+    _forEach에서도 마찬가지로 잘라 보낸다
+    */
     Matrix.prototype.forEach = function (func) {
         //var stack = [this._array];
         //var indexes = [0];
@@ -545,38 +557,31 @@ var Matrix = (function () {
 
     Object.defineProperty(Matrix.prototype, "coordinateOffset", {
         get: function () {
-            return this._coordinateOffset.slice(0);
+            return this._coordinateStartOffset.slice(0);
         },
         enumerable: true,
         configurable: true
     });
     Object.defineProperty(Matrix.prototype, "isSizeFixed", {
         get: function () {
-            return this._snippedSize !== undefined;
+            return this._coordinateEndOffset !== undefined;
         },
         enumerable: true,
         configurable: true
     });
 
     //should support sub-dimension matrix (milestone)
-    Matrix.prototype.submatrix = function (begin, end) {
+    Matrix.prototype.submatrix = function (start, end) {
         var matrix = new Matrix();
         matrix.baseArray = this.baseArray;
 
-        AssertHelper.assertArray(begin);
-        matrix._coordinateOffset = this._getProperSnippingCoordinate(this._getInternalCoordinate(begin));
-
-        var resultSize = [];
-        var resultingEnd;
+        AssertHelper.assertArray(start);
+        matrix._coordinateStartOffset = this._getProperSnippingCoordinate(this._getInternalCoordinate(start));
         if (Array.isArray(end))
-            resultingEnd = this._getProperSnippingCoordinate(this._getInternalCoordinate(end));
+            matrix._coordinateEndOffset = this._getProperSnippingCoordinate(this._getInternalCoordinate(end));
         else
-            resultingEnd = this.size;
+            matrix._coordinateEndOffset = this.size.slice(0);
 
-        for (var i = 0; i < resultingEnd.length; i++)
-            resultSize[i] = resultingEnd[i] - matrix._coordinateOffset[i];
-
-        matrix._snippedSize = resultSize;
         matrix.isSizeFixed = true;
         return matrix;
     };

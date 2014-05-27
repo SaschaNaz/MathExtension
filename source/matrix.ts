@@ -1,4 +1,4 @@
-class Matrix<T> {
+﻿class Matrix<T> {
     static isZeroBased = false;
     static isMatrix(object: any) {
         //http://stackoverflow.com/questions/332422/how-do-i-get-the-name-of-an-objects-type-in-javascript
@@ -34,17 +34,22 @@ class Matrix<T> {
         return this.baseArray.length;
     }
     get size() {
+        var size: number[] = [];
         if (!this.isSizeFixed) {
-            var size: number[] = [];
             var targetArray = <any[]>this.baseArray;
             while (Array.isArray(targetArray)) {
                 size.push(targetArray.length);
                 targetArray = targetArray[0];
             }
-            return size;
         }
-        else
-            return this._snippedSize.slice(0);
+        else {
+            var startOffset = this._coordinateStartOffset;
+            var endOffset = this._coordinateEndOffset;
+            for (var i = 0; i < endOffset.length; i++)
+                size[i] = endOffset[i] - startOffset[i];
+        }
+
+        return size;
     }
     get serialSize() {
         var size = this.size;
@@ -88,7 +93,7 @@ class Matrix<T> {
         }
         this.baseArray = Matrix._getArrayMatrix(size, items, subchunkSize);
         for (var i = 0; i < size.length; i++)
-            this._coordinateOffset.push(0);
+            this._coordinateStartOffset.push(0);
 
         ////columnLength is a number
         //AssertHelper.assert(columnLength >= 1, "Column length should be larger than or equal to 1.");
@@ -171,7 +176,7 @@ class Matrix<T> {
     }
 
     private _getBaseArrayCoordinate(coordinate: number[]) {
-        return coordinate.map((n, dimension) => { return n + this._coordinateOffset[dimension] });
+        return coordinate.map((n, dimension) => { return n + this._coordinateStartOffset[dimension] });
     }
 
     get(index: number): T;
@@ -324,6 +329,14 @@ class Matrix<T> {
             });
         }
     }
+
+    /*
+    일단 머리감고 일단 최적화는 나중에 하고 고치기부터 하자
+    1. _snippedSize를 _coordinateEndOffset으로 교체하고, size()는 여기서부터 계산하도록 한다
+    이유는 _snippedSize보다 _coordinateEndOffset 쪽이 더 직접 쓰기 유용함
+    2. forEach에서 this.baseArray를 통째로 보내지 말고 coordinateStartOffset과 EndOffset을 이용해 잘라 보내고
+    _forEach에서도 마찬가지로 잘라 보낸다
+    */
 
     forEach(func: (item: T, coordinate: number[]) => void) {
         //var stack = [this._array];
@@ -508,35 +521,27 @@ class Matrix<T> {
         return newMatrix;
     }
 
-    private _coordinateOffset: number[] = [];
+    private _coordinateStartOffset: number[] = [];
+    private _coordinateEndOffset: number[];
     get coordinateOffset() {
-        return this._coordinateOffset.slice(0);
+        return this._coordinateStartOffset.slice(0);
     }
     get isSizeFixed() {
-        return this._snippedSize !== undefined;
+        return this._coordinateEndOffset !== undefined;
     }
-    private _snippedSize: number[];
 
     //should support sub-dimension matrix (milestone)
-    submatrix(begin: number[], end?: number[]) {
+    submatrix(start: number[], end?: number[]) {
         var matrix = new Matrix();
         matrix.baseArray = this.baseArray;
 
-        AssertHelper.assertArray(begin);
-        matrix._coordinateOffset = this._getProperSnippingCoordinate(this._getInternalCoordinate(begin));
-
-        var resultSize: number[] = [];
-        var resultingEnd: number[];
+        AssertHelper.assertArray(start);
+        matrix._coordinateStartOffset = this._getProperSnippingCoordinate(this._getInternalCoordinate(start));
         if (Array.isArray(end))
-            resultingEnd = this._getProperSnippingCoordinate(this._getInternalCoordinate(end));
+            matrix._coordinateEndOffset = this._getProperSnippingCoordinate(this._getInternalCoordinate(end));
         else
-            resultingEnd = this.size;
+            matrix._coordinateEndOffset = this.size.slice(0);
 
-        for (var i = 0; i < resultingEnd.length; i++)
-            resultSize[i] = resultingEnd[i] - matrix._coordinateOffset[i];
-
-        matrix._snippedSize = resultSize;
-        matrix.isSizeFixed = true;
         return matrix;
     }
     private _getProperSnippingCoordinate(coordinate: number[]) {
