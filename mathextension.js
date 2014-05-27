@@ -615,10 +615,8 @@ var Matrix = (function () {
                 proper[i] = thisSize[i] + proper[i];
                 if (proper[i] < 0)
                     proper[i] = 0;
-            } else if (proper[i] > thisSize[i])
+            } else if (proper[i] > thisSize[i] || proper[i] === undefined)
                 proper[i] = thisSize[i];
-            else if (isNaN(proper[i]))
-                proper[i] = 0;
         }
         return proper;
         //process minus number
