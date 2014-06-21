@@ -161,9 +161,7 @@
         AssertHelper.assertParameter(coordinate);
         var internalCoordinate: number[] = [];
         if (Array.isArray(coordinate)) {
-            internalCoordinate = (<number[]>coordinate).map((n) => {
-                return Matrix._getZeroBasedIndex(n);
-            });
+            internalCoordinate = (<number[]>coordinate).map((n) => Matrix._getZeroBasedIndex(n));
         }
         else {
             var index = coordinate;
@@ -175,7 +173,7 @@
 
     private _getBaseArrayCoordinate(coordinate: number[]) {
         var startOffset = this.coordinateOffset;
-        return coordinate.map((n, dimension) => { return n + startOffset[dimension] });
+        return coordinate.map((n, dimension) => n + startOffset[dimension]);
     }
 
     get(index: number): T;
@@ -204,7 +202,7 @@
 
         if (!this._isValidInternalCoordinate(internalCoordinate)) {
             if (!this.isSizeFixed)
-                this.expand(internalCoordinate.map((i: number) => { return i + 1 }), undefined);
+                this.expand(internalCoordinate.map((i: number) => i + 1), undefined);
             else
                 return;
         }
@@ -332,7 +330,7 @@
         while (stack.length > 0) {
             if (currentIndex < endOffset[indices.length]) {
                 if (stack.length == dimension) {
-                    getItem(stack[0][currentIndex], indices.concat(currentIndex).map((n) => { return Matrix._getOneBasedIndex(n) }));
+                    getItem(stack[0][currentIndex], indices.concat(currentIndex).map((n) => Matrix._getOneBasedIndex(n)));
                     currentIndex++;
                 }
                 else {

@@ -38,6 +38,32 @@
     };
     return AssertHelper;
 })();
+Math.add = function (x, y) {
+    return x + y;
+};
+
+Math.subtract = function (x, y) {
+    return x - y;
+};
+
+Math.multiply = function (x, y) {
+    return x * y;
+};
+
+Math.divide = function (x, y) {
+    return x / y;
+};
+
+Math.substitute = function (x, y) {
+    return y;
+};
+
+Math.factorial = function (x) {
+    var result = 1;
+    for (var i = 1; i <= x; i++)
+        result *= i;
+    return result;
+};
 var Matrix = (function () {
     function Matrix(size, items) {
         if (typeof items === "undefined") { items = []; }
@@ -591,32 +617,6 @@ var Matrix = (function () {
     Matrix.isZeroBased = false;
     return Matrix;
 })();
-Math.add = function (x, y) {
-    return x + y;
-};
-
-Math.subtract = function (x, y) {
-    return x - y;
-};
-
-Math.multiply = function (x, y) {
-    return x * y;
-};
-
-Math.divide = function (x, y) {
-    return x / y;
-};
-
-Math.substitute = function (x, y) {
-    return y;
-};
-
-Math.factorial = function (x) {
-    var result = 1;
-    for (var i = 1; i <= x; i++)
-        result *= i;
-    return result;
-};
 //interface FileReader {
 //    readAsMatrix(blob: Blob): void;
 //}
