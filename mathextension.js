@@ -95,6 +95,7 @@ var Matrix = (function () {
         //        this._array[row][column] = items[row * columnLength + column];
         //}
     }
+    //static isZeroBased = false;
     Matrix.isMatrix = function (object) {
         //http://stackoverflow.com/questions/332422/how-do-i-get-the-name-of-an-objects-type-in-javascript
         var funcNameRegex = /function\s+(.{1,})\s*\(/;
@@ -105,17 +106,19 @@ var Matrix = (function () {
 
     //this implicitly returns NaN if isNaN(i) is true
     Matrix._getZeroBasedIndex = function (i) {
-        if (Matrix.isZeroBased)
-            return i;
-        else
-            return i - 1;
+        //if (Matrix.isZeroBased)
+        //    return i;
+        //else
+        //    return i - 1;
+        return i - 1;
     };
 
     Matrix._getOneBasedIndex = function (i) {
-        if (Matrix.isZeroBased)
-            return i;
-        else
-            return i + 1;
+        //if (Matrix.isZeroBased)
+        //    return i;
+        //else
+        //    return i + 1;
+        return i + 1;
     };
 
     Object.defineProperty(Matrix.prototype, "columnLength", {
@@ -211,7 +214,7 @@ var Matrix = (function () {
         //for (var i = 0; i < size
     };
 
-    Matrix.prototype._getInternalCoordinateFromIndex = function (index) {
+    Matrix.prototype._getZeroBasedCoordinateFromIndex = function (index) {
         AssertHelper.assertNumber(index);
         index = Matrix._getZeroBasedIndex(index);
 
@@ -232,7 +235,7 @@ var Matrix = (function () {
         return coordinate;
     };
 
-    Matrix.prototype._getInternalCoordinate = function (coordinate) {
+    Matrix.prototype._getZeroBasedCoordinate = function (coordinate) {
         AssertHelper.assertParameter(coordinate);
         var internalCoordinate = [];
         if (Array.isArray(coordinate)) {
@@ -241,10 +244,17 @@ var Matrix = (function () {
             });
         } else {
             var index = coordinate;
-            internalCoordinate = this._getInternalCoordinateFromIndex(index);
+            internalCoordinate = this._getZeroBasedCoordinateFromIndex(index);
         }
 
         return internalCoordinate;
+    };
+
+    Matrix.prototype._getOneBasedCoordinate = function (coordinate) {
+        AssertHelper.assertArray(coordinate);
+        return coordinate.map(function (n) {
+            return Matrix._getOneBasedIndex(n);
+        });
     };
 
     Matrix.prototype._getBaseArrayCoordinate = function (coordinate) {
@@ -253,13 +263,19 @@ var Matrix = (function () {
             return n + startOffset[dimension];
         });
     };
+    Matrix.prototype._getSurfaceCoordinate = function (coordinate) {
+        var startOffset = this.coordinateOffset;
+        return coordinate.map(function (n, dimension) {
+            return n - startOffset[dimension];
+        });
+    };
 
     Matrix.prototype.get = function (coordinate) {
         AssertHelper.assertParameter(coordinate);
-        var internalCoordinate = this._getInternalCoordinate(coordinate);
+        var zeroBasedCoordinate = this._getZeroBasedCoordinate(coordinate);
 
-        if (this._isValidInternalCoordinate(internalCoordinate)) {
-            var dimensioner = this._getBaseArrayCoordinate(internalCoordinate).slice(0);
+        if (this._isValidInternalCoordinate(zeroBasedCoordinate)) {
+            var dimensioner = this._getBaseArrayCoordinate(zeroBasedCoordinate).slice(0);
             var targetArray = this.baseArray;
             while (dimensioner.length > 0) {
                 targetArray = targetArray[dimensioner.shift()];
@@ -271,18 +287,16 @@ var Matrix = (function () {
 
     Matrix.prototype.set = function (coordinate, input) {
         AssertHelper.assertParameter(coordinate);
-        var internalCoordinate = this._getInternalCoordinate(coordinate);
+        var zeroBasedCoordinate = this._getZeroBasedCoordinate(coordinate);
 
-        if (!this._isValidInternalCoordinate(internalCoordinate)) {
+        if (!this._isValidInternalCoordinate(zeroBasedCoordinate)) {
             if (!this.isSizeFixed)
-                this.expand(internalCoordinate.map(function (i) {
-                    return i + 1;
-                }), undefined);
+                this.expand(this._getOneBasedCoordinate(zeroBasedCoordinate));
             else
                 return;
         }
 
-        var dimensioner = this._getBaseArrayCoordinate(internalCoordinate).slice(0);
+        var dimensioner = this._getBaseArrayCoordinate(zeroBasedCoordinate).slice(0);
         var targetArray = this.baseArray;
         while (dimensioner.length > 1) {
             targetArray = targetArray[dimensioner.shift()];
@@ -311,12 +325,13 @@ var Matrix = (function () {
 
     //should be more efficient
     Matrix.prototype.expand = function (targetSize, fill) {
+        if (typeof fill === "undefined") { fill = undefined; }
         AssertHelper.assert(!this.isSizeFixed, "Size-fixed matrices including submatrices cannot be expanded. Try cloning those ones.");
         AssertHelper.assertArray(targetSize);
         var size = this.size;
         AssertHelper.assert(targetSize.length >= size.length, "Target dimension should be larger than or equal with original dimension");
 
-        var finalExpandedSize = this._getFinalExpandedSize(targetSize);
+        var finalExpandedSize = this._defineExpandedSize(targetSize);
 
         if (this.serialSize > 0 && finalExpandedSize.length > size.length) {
             var dimensionDifference = finalExpandedSize.length - size.length;
@@ -338,7 +353,7 @@ var Matrix = (function () {
         }
     };
 
-    Matrix.prototype._getFinalExpandedSize = function (targetSize) {
+    Matrix.prototype._defineExpandedSize = function (targetSize) {
         var finalSize = targetSize.slice(0);
         var size = this.size;
         var dimensionDifference = finalSize.length - size.length;
@@ -411,9 +426,7 @@ var Matrix = (function () {
         while (stack.length > 0) {
             if (currentIndex < endOffset[indices.length]) {
                 if (stack.length == dimension) {
-                    getItem(stack[0][currentIndex], indices.concat(currentIndex).map(function (n) {
-                        return Matrix._getOneBasedIndex(n);
-                    }));
+                    getItem(stack[0][currentIndex], this._getSurfaceCoordinate(this._getOneBasedCoordinate(indices.concat(currentIndex))));
                     currentIndex++;
                 } else {
                     if (getDeeper)
@@ -590,15 +603,15 @@ var Matrix = (function () {
         matrix.baseArray = this.baseArray;
 
         AssertHelper.assertArray(start);
-        matrix._coordinateStartOffset = this._getProperSnippingCoordinate(this._getInternalCoordinate(start));
+        matrix._coordinateStartOffset = this._defineSnippingCoordinate(this._getZeroBasedCoordinate(start));
         if (Array.isArray(end))
-            matrix._coordinateEndOffset = this._getProperSnippingCoordinate(end); //do not convert end coordinate so that the whole area would include end position in ONE-BASED system.
+            matrix._coordinateEndOffset = this._defineSnippingCoordinate(end); //do not convert end coordinate so that the whole area would include end position in ONE-BASED system.
         else
             matrix._coordinateEndOffset = this.size.slice(0);
 
         return matrix;
     };
-    Matrix.prototype._getProperSnippingCoordinate = function (coordinate) {
+    Matrix.prototype._defineSnippingCoordinate = function (coordinate) {
         var thisSize = this.size;
         AssertHelper.assert(thisSize.length == coordinate.length, "Snipping coordinate's dimension should be same as original one, even if you want to get a sub-dimensional matrix.");
         var proper = coordinate.slice(0);
@@ -614,7 +627,6 @@ var Matrix = (function () {
         //process minus number
         //reduce numbers so that they fit in the current size
     };
-    Matrix.isZeroBased = false;
     return Matrix;
 })();
 //interface FileReader {

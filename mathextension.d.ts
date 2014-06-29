@@ -13,7 +13,6 @@ interface Math {
     factorial(x: number): number;
 }
 declare class Matrix<T> {
-    static isZeroBased: boolean;
     static isMatrix(object: any): boolean;
     private static _getZeroBasedIndex(i);
     private static _getOneBasedIndex(i);
@@ -27,16 +26,18 @@ declare class Matrix<T> {
     constructor();
     constructor(size: number[], items?: T[]);
     private static _getArrayMatrix<T2>(size, itemChunk, subchunkLength);
-    private _getInternalCoordinateFromIndex(index);
-    private _getInternalCoordinate(index);
+    private _getZeroBasedCoordinateFromIndex(index);
+    private _getZeroBasedCoordinate(index);
+    private _getOneBasedCoordinate(coordinate);
     private _getBaseArrayCoordinate(coordinate);
+    private _getSurfaceCoordinate(coordinate);
     public get(index: number): T;
     public get(coordinate: number[]): T;
     public set(index: number, input: T): void;
     public set(coordinate: number[], input: T): void;
     private static _expandArray<T2>(array, targetSize, fill);
     public expand(targetSize: number[], fill?: T): void;
-    private _getFinalExpandedSize(targetSize);
+    private _defineExpandedSize(targetSize);
     public clone(): Matrix<any>;
     static isSameSize(x: Matrix<any>, y: Matrix<any>): boolean;
     public map(func: Function, input?: any, ...argArray: any[]): Matrix<T>;
@@ -66,7 +67,7 @@ declare class Matrix<T> {
     public coordinateOffset : number[];
     public isSizeFixed : boolean;
     public submatrix(start: number[], end?: number[]): Matrix<T>;
-    private _getProperSnippingCoordinate(coordinate);
+    private _defineSnippingCoordinate(coordinate);
 }
 declare class BlobStream {
     public blob: Blob;
