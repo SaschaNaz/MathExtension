@@ -69,23 +69,5 @@ declare class Matrix<T> {
     public submatrix(start: number[], end?: number[]): Matrix<T>;
     private _defineSnippingCoordinate(coordinate);
 }
-declare class BlobStream {
-    public blob: Blob;
-    private indexInSlice;
-    private slice;
-    private sliceIndex;
-    private sliceSize;
-    public left: number;
-    constructor(blob: Blob);
-    private readNextSlice(oncomplete);
-    public readLine(oncomplete: (result: string) => any): void;
-    public readLines(oneach: (result: string) => any, oncomplete: () => any): void;
-}
-declare class Matrix2DStream extends BlobStream {
-    public dimension: number;
-    constructor(blob: Blob, dimension?: number);
-    public readRow(delimiter: string, oncomplete: (row: number[]) => any): void;
-    public readRows(delimiter: string, oneach: (row: number[]) => any, oncomplete: () => any): void;
-}
 interface Number {
 }
