@@ -21,10 +21,10 @@
     <Content Include="web.config" />
   </ItemGroup>
   <ItemGroup>
-    <TypeScriptCompile Include="source\asserthelper.ts" />
-    <TypeScriptCompile Include="source\matrix.ts" />
-    <TypeScriptCompile Include="source\math.ts" />
-    <TypeScriptCompile Include="source\number.ts" />
+    <TypeScriptCompile Include="sources\asserthelper.ts" />
+    <TypeScriptCompile Include="sources\matrix.ts" />
+    <TypeScriptCompile Include="sources\math.ts" />
+    <TypeScriptCompile Include="sources\number.ts" />
   </ItemGroup>
   <ItemGroup>
     <None Include="web.Debug.config">
