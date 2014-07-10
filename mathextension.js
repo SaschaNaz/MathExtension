@@ -574,6 +574,14 @@ var Matrix = (function () {
         return newMatrix;
     };
 
+    Matrix.prototype.serialize = function () {
+        var serial = [];
+        this.forEach(function (item) {
+            serial.push(item);
+        });
+        return serial;
+    };
+
     Object.defineProperty(Matrix.prototype, "coordinateOffset", {
         get: function () {
             if (this.isSizeFixed)

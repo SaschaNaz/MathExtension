@@ -62,6 +62,7 @@ declare class Matrix<T> {
     public replace(input: T): Matrix<T>;
     public replace(input: Matrix<T>): Matrix<T>;
     public transpose(): Matrix<{}>;
+    public serialize(): T[];
     private _coordinateStartOffset;
     private _coordinateEndOffset;
     public coordinateOffset : number[];

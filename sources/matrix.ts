@@ -502,6 +502,14 @@
         return newMatrix;
     }
 
+    serialize() {
+        var serial: T[] = [];
+        this.forEach((item) => {
+            serial.push(item);
+        });
+        return serial;
+    }
+
     private _coordinateStartOffset: number[];
     private _coordinateEndOffset: number[];
     get coordinateOffset() {
