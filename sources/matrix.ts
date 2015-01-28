@@ -7,6 +7,8 @@
         var result = (regexResults && regexResults.length > 1) ? regexResults[1] : "";
         return result === "Matrix";
     }
+    static deserialize() {
+    }
 
     //this implicitly returns NaN if isNaN(i) is true
     private static _getZeroBasedIndex(i: number) {
@@ -293,6 +295,18 @@
         return new Matrix(this.size, items);
     }
 
+    overwrite(input: Matrix<T>, offset = new Array(this.size.length).fill(1)) {
+        offset = this._getZeroBasedCoordinate(offset);
+        var sub = this.size.length - input.size.length;
+        if (sub < 0 || this.size.length !== offset.length)
+            throw new Error();
+        input.forEach((item, coordinates) => {
+            coordinates = offset.map((value, index) => index < sub ? value : value + coordinates[index - sub]);
+            this.set(coordinates, item);
+        });
+        return this;
+    }
+
     static isSameSize(x: Matrix<any>, y: Matrix<any>) {
         var xsize = x.size;
         var ysize = y.size;
@@ -307,7 +321,7 @@
         return <Matrix<T>>this.mapFor.apply(this, [func, null, input].concat(argArray));
     }
 
-    mapFor(func: Function, condition: (item: number, coordinate: number[]) => boolean, input?: any, ...argArray: any[]) {
+    mapFor(func: Function, condition: (item: T, coordinate: number[]) => boolean, input?: any, ...argArray: any[]) {
         if (input != null && Matrix.isMatrix(input))
             AssertHelper.assert(Matrix.isSameSize(this, input), "Dimensions should match each other");
 
