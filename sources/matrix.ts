@@ -246,7 +246,7 @@
                     this._expandArray(array[i], childSize, fill);
                 }
                 for (let i = array.length; i < targetSize[0]; i++) {
-                    var childArray: any[] = [];
+                    const childArray: any[] = [];
                     this._expandArray(childArray, childSize, fill);
                     array.push(childArray);
                 }
