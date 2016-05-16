@@ -1,25 +1,26 @@
-class AssertHelper {
-    static assertParameter(...parameters: any[]) {
-        parameters.forEach((p) => {
-            AssertHelper.assert(p != null, "Argument not optional");
-        });
+namespace SNMath.AssertHelper {
+    export function assertParameter(...parameters: any[]) {
+        for (const parameter of parameters) {
+            AssertHelper.assert(parameter != null, "Argument not optional");
+        }
     }
 
-    static assertNumber(...numbers: number[]) {
-        numbers.forEach((n) => {
+    export function assertNumber(...numbers: number[]) {
+        for (const n of numbers) {
             AssertHelper.assert(n !== undefined, "Argument not optional");
             AssertHelper.assert(!isNaN(n), "Invalid argument.");
-        });
+        }
     }
 
-    static assertArray(...arrays: any[][]) {
-        arrays.forEach((array) => {
+    export function assertArray(...arrays: any[][]) {
+        for (const array of arrays) {
             AssertHelper.assert(Array.isArray(array), "Invalid argument.");
-        });
+        }
     }
 
-    static assert(condition: boolean, message: string) {
-        if (!condition)
+    export function assert(condition: boolean, message: string) {
+        if (!condition) {
             throw new Error(message);
+        }
     }
 } 

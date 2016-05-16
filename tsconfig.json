@@ -1,0 +1,14 @@
+{
+    "compilerOptions": {
+        "target": "es6",
+        "noImplicitAny": true,
+        "sourceMap": true,
+        "declaration": true,
+        "out": "built/snmath.js"
+    },
+    "files": [
+        "sources/asserthelper.ts",
+        "sources/math.ts",
+        "sources/matrix.ts"
+    ]
+}

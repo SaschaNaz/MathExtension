@@ -1,35 +1,28 @@
-interface Math {
-    add(x: number, y: number): number;
-    subtract(x: number, y: number): number;
-    multiply(x: number, y: number): number;
-    divide(x: number, y: number): number;
-    substitute(x: number, y: number): number;
-    factorial(x: number): number;
-}
+namespace SNMath {
+    export function add(x: number, y: number) {
+        return x + y;
+    }
 
-Math.add = (x: number, y: number) => {
-    return x + y;
-}
+    export function subtract(x: number, y: number) {
+        return x - y;
+    }
 
-Math.subtract = (x: number, y: number) => {
-    return x - y;
-}
+    export function multiply(x: number, y: number) {
+        return x * y;
+    }
 
-Math.multiply = (x: number, y: number) => {
-    return x * y;
-}
+    export function divide(x: number, y: number) {
+        return x / y;
+    }
 
-Math.divide = (x: number, y: number) => {
-    return x / y;
-}
+    export function substitute(x: number, y: number) {
+        return y;
+    }
 
-Math.substitute = (x: number, y: number) => {
-    return y;
+    export function factorial(x: number) {
+        let result = 1;
+        for (let i = 1; i <= x; i++)
+            result *= i;
+        return result;
+    }
 }
-
-Math.factorial = (x: number) => {
-    var result = 1;
-    for (var i = 1; i <= x; i++)
-        result *= i;
-    return result;
-};
