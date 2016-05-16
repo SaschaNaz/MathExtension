@@ -1,11 +1,11 @@
 ﻿namespace SNMath {
     class Matrix<T> {
         //static isZeroBased = false;
-        static isMatrix(object: any) {
+        static isMatrix(object: any): object is Matrix<any> {
             //http://stackoverflow.com/questions/332422/how-do-i-get-the-name-of-an-objects-type-in-javascript
-            var funcNameRegex = /function\s+(.{1,})\s*\(/;
-            var regexResults = funcNameRegex.exec(object.constructor.toString());
-            var result = (regexResults && regexResults.length > 1) ? regexResults[1] : "";
+            const funcNameRegex = /function\s+(.{1,})\s*\(/;
+            const regexResults = funcNameRegex.exec(object.constructor.toString());
+            const result = (regexResults && regexResults.length > 1) ? regexResults[1] : "";
             return result === "Matrix";
         }
         static deserialize() {
@@ -308,7 +308,7 @@
             return this;
         }
 
-        static isSameSize(x: Matrix<any>, y: Matrix<any>) {
+        static hasSameSize(x: Matrix<any>, y: Matrix<any>) {
             var xsize = x.size;
             var ysize = y.size;
             for (var i = 0; i < xsize.length; i++) {
@@ -319,20 +319,20 @@
         }
 
         map(func: Function, input?: any, ...argArray: any[]) {
-            return <Matrix<T>>this.mapFor.apply(this, [func, null, input].concat(argArray));
+            return this.mapFor(func, null, input, ...argArray);
         }
 
         mapFor(func: Function, condition: (item: T, coordinate: number[]) => boolean, input?: any, ...argArray: any[]) {
             if (input != null && Matrix.isMatrix(input))
-                AssertHelper.assert(Matrix.isSameSize(this, input), "Dimensions should match each other");
+                AssertHelper.assert(Matrix.hasSameSize(this, input), "Dimensions should match each other");
 
             var newMatrix = this.clone();
             newMatrix.forEach((item, coordinate) => {
                 if (!condition || condition(item, coordinate)) {
                     if (input == null)
-                        newMatrix.set(coordinate, func.apply(null, [item]));
+                        newMatrix.set(coordinate, func(item));
                     else
-                        newMatrix.set(coordinate, func.apply(null, [item, Matrix.isMatrix(input) ? (<Matrix<T>>input).get(coordinate) : input].concat(argArray)));
+                        newMatrix.set(coordinate, func(item, Matrix.isMatrix(input) ? (<Matrix<T>>input).get(coordinate) : input, ...argArray));
                 }
             });
 
