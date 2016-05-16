@@ -1,5 +1,5 @@
 ﻿namespace SNMath {
-    class Matrix<T> {
+    export class Matrix<T> {
         //static isZeroBased = false;
         static isMatrix(object: any): object is Matrix<any> {
             //http://stackoverflow.com/questions/332422/how-do-i-get-the-name-of-an-objects-type-in-javascript
