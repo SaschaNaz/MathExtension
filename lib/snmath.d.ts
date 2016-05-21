@@ -65,7 +65,7 @@ declare namespace SNMath {
         powerOf(input: Matrix<T>): Matrix<T>;
         replace(input: T): Matrix<T>;
         replace(input: Matrix<T>): Matrix<T>;
-        transpose(): Matrix<{}>;
+        transpose(): Matrix<T>;
         serialize(): T[];
         private _coordinateStartOffset;
         private _coordinateEndOffset;

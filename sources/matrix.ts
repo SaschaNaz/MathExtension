@@ -525,7 +525,7 @@
         //}
 
         transpose() {
-            const newMatrix = new Matrix(this.size.reverse());
+            const newMatrix = new Matrix<T>(this.size.reverse());
             this.forEach((item, coordinate) => {
                 newMatrix.set(coordinate.reverse(), item);
             });
@@ -534,7 +534,7 @@
 
         serialize() {
             const serial: T[] = [];
-            this.forEach((item) => {
+            this.forEach(item => {
                 serial.push(item);
             });
             return serial;
